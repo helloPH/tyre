@@ -46,24 +46,25 @@
     _imgView.layer.borderWidth=0.5;
     [self.contentView addSubview:_imgView];
     _imgView.image=[UIImage imageNamed:@"luntai_tai"];
+    _imgView.contentMode=UIViewContentModeScaleAspectFit;
     
     _labelIntro=[UILabel new];
     _labelIntro.numberOfLines=2;
-    _labelIntro.font=Small10Font(self.scale);
+    _labelIntro.font=DefaultFont(self.scale);
     _labelIntro.textColor=blackTextColor;
     [self.contentView addSubview:_labelIntro];
 
     
     _labelPrice=[UILabel new];
     _labelPrice.numberOfLines=1;
-    _labelPrice.font=Big15Font(self.scale);
+    _labelPrice.font=Big17Font(self.scale);
     _labelPrice.textColor=lightOrangeColor;
     [self.contentView addSubview:_labelPrice];
 
     
     _labelStandard=[UILabel new];
     _labelStandard.numberOfLines=1;
-    _labelStandard.font=Small10Font(self.scale);
+    _labelStandard.font=DefaultFont(self.scale);
     _labelStandard.textColor=blackTextColor;
     [self.contentView addSubview:_labelStandard];
  
@@ -81,7 +82,7 @@
     _btnAction=[UIButton new];
     [_btnAction setBackgroundImage:[UIImage ImageForColor:darkOrangeColor] forState:UIControlStateNormal];
     [_btnAction setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    _btnAction.titleLabel.font=Small10Font(self.scale);
+    _btnAction.titleLabel.font=DefaultFont(self.scale);
     _btnAction.layer.cornerRadius=2;
     _btnAction.layer.masksToBounds=YES;
     _btnAction.tag=100;
@@ -91,7 +92,7 @@
 
     
     _btnEdit=[UIButton new];
-    _btnEdit.titleLabel.font=Small10Font(self.scale);
+    _btnEdit.titleLabel.font=DefaultFont(self.scale);
     _btnEdit.layer.borderColor=darkOrangeColor.CGColor;
     [_btnEdit setTitleColor:darkOrangeColor forState:UIControlStateNormal];
     _btnEdit.layer.borderWidth=0.5;
@@ -115,11 +116,11 @@
     _labelStandard.frame=_labelPrice.frame;
     _labelStandard.bottom =_imgView.bottom;
     
-    _cellView.frame=CGRectMake(0, _imgView.bottom+10*self.scale, Vwidth, 30*self.scale);
+    _cellView.frame=CGRectMake(0, _imgView.bottom+10*self.scale, Vwidth, 40*self.scale);
     
 //    _cellView.backgroundColor=[UIColor grayColor];
     
-    _btnAction.frame=CGRectMake(40*self.scale, 0, 50*self.scale, 20*self.scale);
+    _btnAction.frame=CGRectMake(40*self.scale, 0, 70*self.scale, 25*self.scale);
      _btnAction.centerY=_cellView.height/2;
     
     _btnEdit.frame=_btnAction.frame;

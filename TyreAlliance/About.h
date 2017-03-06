@@ -9,5 +9,5 @@
 #import "SuperViewController.h"
 
 @interface About : SuperViewController
-
+@property (nonatomic,strong)NSString * urlString;
 @end

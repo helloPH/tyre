@@ -37,7 +37,7 @@
     // Do any additional setup after loading the view.
 }
 -(void)newNavi{
-    self.TitleLabel.text=@"订单管理";
+    self.TitleLabel.text=@"我的订单";
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
         [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
         [popBtn setImage:[UIImage imageNamed:@"left_b"] forState:UIControlStateHighlighted];
@@ -93,19 +93,23 @@
         if ([ret isEqualToString:@"1"]) {
             [_datas addObjectsFromArray:model];
             if ([model count]==0) {
-                [self showPromptBoxWithSting:@"没有更多内容!"];
                 [_tableView.mj_footer endRefreshingWithNoMoreData];
             }else{
-                [self showPromptBoxWithSting:msg];
                 [_tableView.mj_footer endRefreshing];
             }
-            
         }else{
-            [self showPromptBoxWithSting:msg];
+//            [self showPromptBoxWithSting:msg];
             [_tableView.mj_footer endRefreshing];
         }
-        [_tableView reloadData];
+        [self showBtnEmpty:_datas.count==0?YES:NO];
+
+        [self reshView];
     }];
+}
+-(void)reshView{
+    [_tableView reloadData];
+//    [self showBtnEmpty:_datas.count==0?YES:NO];
+    
 }
 -(void)newView{
     
@@ -187,7 +191,15 @@
     MyOrderHeadView * view=[tableView dequeueReusableHeaderFooterViewWithIdentifier:@"headView"];
     view.section=section;
     view.delegate=self;
-    view.labelOrderNum.text=[NSString stringWithFormat:@"订单号:%@",dic[@"ziid"]];
+//    view.labelOrderNum.text=[NSString stringWithFormat:@"订单号:%@",dic[@"ziid"]];
+    NSMutableAttributedString * orderA=[[NSMutableAttributedString alloc]initWithString:@"订单号："];
+    NSMutableAttributedString * orderA1=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dic[@"ziid"]]];
+    [orderA1 addAttribute:NSForegroundColorAttributeName value:lightOrangeColor range:NSMakeRange(0, [NSString stringWithFormat:@"%@",dic[@"ziid"]].length)];
+    [orderA appendAttributedString:orderA1];
+    view.labelOrderNum.attributedText=orderA;
+    
+    
+    
     
 //    NSString * states=[NSString stringWithFormat:@"%@",dic[@"states"]];
     NSMutableAttributedString * statesA=[[NSMutableAttributedString alloc]initWithString:@"订单状态:"];
@@ -210,7 +222,6 @@
     OrderDetail * orderDetail=[OrderDetail new];
     orderDetail.ziid=[NSString stringWithFormat:@"%@",dic[@"ziid"]];
     orderDetail.orderType=_orderType;
-    
     [self.navigationController pushViewController:orderDetail animated:YES];
 }
 
@@ -231,7 +242,7 @@
     [pDatas addObjectsFromArray:[_datas[indexPath.section]objectForKey:@"eary"]];
     NSDictionary * dic=pDatas[indexPath.row];
     
-    [cell.imgView setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",dic[@"plogo"]]] placeholderImage:[UIImage imageNamed:@"luntai_tai"]];
+    [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"plogo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
     cell.labelIntro.text=[NSString stringWithFormat:@"%@",dic[@"name"]];
    
     NSString * xian=[NSString stringWithFormat:@"￥%@  ",dic[@"newprice"]];
@@ -248,7 +259,11 @@
     return cell;
 }
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
-
+    NSDictionary * dic=_datas[indexPath.section];
+    OrderDetail * orderDetail=[OrderDetail new];
+    orderDetail.ziid=[NSString stringWithFormat:@"%@",dic[@"ziid"]];
+    orderDetail.orderType=_orderType;
+    [self.navigationController pushViewController:orderDetail animated:YES];
 }
 
 
@@ -265,7 +280,7 @@
     NSDictionary * dic=_datas[section];
     
     view.labelGodsCount.text=[NSString stringWithFormat:@"共%@件商品",dic[@"count"]];
-    view.labelPaid.text=[NSString stringWithFormat:@"实付款:%@",dic[@"allprice"]];
+    view.labelPaid.text=[NSString stringWithFormat:@"实付:￥%@",dic[@"allprice"]];
   
     view.delegate=self;
     view.section=section;
@@ -278,6 +293,9 @@
 }
 -(void)actionWithSection:(NSInteger)section{
     EditOrder * editOrder = [EditOrder new];
+    editOrder.block=^(BOOL isSuccess){
+        [self reshData];
+    };
     editOrder.dataDic=_datas[section];
     [self.navigationController pushViewController:editOrder animated:YES];
 }

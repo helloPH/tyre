@@ -66,6 +66,22 @@
 -(BOOL)isValidateEmail;
 /**
  *
+ *判断是否为数字格式
+ */
+-(BOOL)isValidateNum;
+
+/**
+ *
+ *判断是否是正在输入的金额
+ */
+-(BOOL)isValidateMoneying;
+/**
+ *
+ *判断是否是正在输入的金额
+ */
+-(BOOL)isValidateMoneyed;
+/**
+ *
  *判断是否是手机号
  */
 -(BOOL) isValidateMobile;

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="11542" systemVersion="16A323" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11524"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="GuideViewViewController">
+            <connections>
+                <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" image="02.png" translatesAutoresizingMaskIntoConstraints="NO" id="43X-a1-tg0">
+                    <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                </imageView>
+            </subviews>
+            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstItem="43X-a1-tg0" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="21j-93-x9w"/>
+                <constraint firstAttribute="trailing" secondItem="43X-a1-tg0" secondAttribute="trailing" id="A9c-qz-3pL"/>
+                <constraint firstItem="43X-a1-tg0" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="pZ5-ej-skw"/>
+                <constraint firstAttribute="bottom" secondItem="43X-a1-tg0" secondAttribute="bottom" id="wNF-w7-5i1"/>
+            </constraints>
+            <point key="canvasLocation" x="420" y="293"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="02.png" width="320" height="568"/>
+    </resources>
+</document>

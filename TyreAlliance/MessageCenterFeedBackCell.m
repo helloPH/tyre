@@ -17,6 +17,7 @@
     return self;
 }
 -(void)newView{
+    self.selectionStyle=UITableViewCellSelectionStyleNone;
     _topLine=[[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 0.5*self.scale)];
     _topLine.backgroundColor=blackLineColore;
     [self.contentView addSubview:_topLine];

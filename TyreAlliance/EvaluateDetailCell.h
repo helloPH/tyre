@@ -14,10 +14,10 @@
 @property (nonatomic,strong)UILabel     * labelTime;
 @property (nonatomic,strong)UIView      * starView,*line;
 @property (nonatomic,strong)UILabel     * labelContent;
-
+@property (nonatomic,strong)UIView      * imgBgView;
 
 @property (nonatomic,assign)NSInteger    level;
 @property (nonatomic,strong)NSArray * imgs;
-
+@property (nonatomic,strong)void (^block)(NSArray * imgs,NSInteger currentInder);
 -(void)layoutHeight:(BOOL)isImage;
 @end

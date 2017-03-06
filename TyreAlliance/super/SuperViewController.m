@@ -21,6 +21,10 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+
+    
     // Do any additional setup after loading the view.
     _appdelegate=(AppDelegate *)[UIApplication sharedApplication].delegate;
     self.navigationController.interactivePopGestureRecognizer.delegate = (id)self;
@@ -37,6 +41,8 @@
        [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent];
     
     [self preferredStatusBarStyle];
+
+    
     
     
    self.navigationController.navigationBarHidden=YES;
@@ -47,6 +53,7 @@
     self.NavImg.userInteractionEnabled = YES;
     self.NavImg.clipsToBounds = YES;
     [self.view  addSubview:self.NavImg];
+    [self.NavImg addGestureRecognizer:tap];
     
     self.TitleLabel = [[UILabel alloc] initWithFrame:CGRectMake(45*self.scale, 20, self.view.width-90*self.scale, 44)];
     self.TitleLabel.textColor = [UIColor whiteColor];
@@ -87,13 +94,64 @@
     
     return newimg;
 }
-
+-(void)dismissKey{
+    [[IQKeyboardManager sharedManager]resignFirstResponder];
+}
 
 -(void)openUrl:(NSString *)string{
 
     [[UIApplication sharedApplication]openURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",string]]];
 
 }
+-(void)showBtnEmpty:(BOOL)show{
+    if (!_btnEmpty) {
+        _btnEmpty=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 100*self.scale, 100*self.scale)];
+        _btnEmpty.image=[UIImage imageNamed:@"noData"];
+        _btnEmpty.contentMode=UIViewContentModeScaleAspectFit;
+        _btnEmpty.center=CGPointMake(Vwidth/2, Vheight/2+20*self.scale);
+        UILabel * lable=[[UILabel alloc]initWithFrame:CGRectMake(0, _btnEmpty.height+2*self.scale, _btnEmpty.width, 20*self.scale)];
+        lable.textColor=blackTextColor;
+        lable.font=DefaultFont(self.scale);
+        lable.textAlignment=NSTextAlignmentCenter;
+        lable.text=@"暂无数据";
+        [_btnEmpty addSubview:lable];
+        [self.view addSubview:_btnEmpty];
+        _btnEmpty.hidden=YES;
+    }
+    
+    
+    if (show) {
+        _btnEmpty.hidden=NO;
+    }else{
+        _btnEmpty.hidden=YES;
+//         [_btnEmpty removeFromSuperview];
+    }
+}
+-(void)showFailed:(BOOL)show{
+    if (show) {
+        if (_loadFailed) {
+            
+        }else{
+            _loadFailed=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 100*self.scale, 100*self.scale)];
+            _loadFailed.image=[UIImage imageNamed:@"loadFailed"];
+            _loadFailed.contentMode=UIViewContentModeCenter;
+            _loadFailed.center=CGPointMake(Vwidth/2, (Vheight-self.NavImg.height)/2+self.NavImg.height);
+            
+            [self.view addSubview:_loadFailed];
+            
+        }
+        
+    }else{
+        if (_loadFailed) {
+            
+            [_loadFailed removeFromSuperview];
+            _loadFailed=nil;
+        }
+        
+    }
+    
+}
+
 
 -(void)makePhoneWithTel:(NSString *)string{
 
@@ -178,6 +236,12 @@
     [alert show];
     _alertBlock=block;
 }
+-(void)showSAlertTitle:(NSString *)title Message:(NSString *)message Delegate:(id)delegate block:(AlertBlock)block{
+    UIAlertView *alert=[[UIAlertView alloc]initWithTitle:title message:message delegate:delegate cancelButtonTitle:nil otherButtonTitles: @"确定",nil];
+    //alert.tintColor=pinkTextColor;
+    [alert show];
+    _alertBlock=block;
+}
 -(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
     [alertView dismissWithClickedButtonIndex:0 animated:YES];
     if (_alertBlock) {
@@ -216,16 +280,23 @@
     
     self.HUD = [MBProgressHUD showHUDAddedTo:self.appdelegate.window animated:YES];
     self.HUD.mode = MBProgressHUDModeIndeterminate;
+    
     if ([[NSString stringWithFormat:@"%@",set] isEmptyString]) {
         set=@"正在加载...";
     }
-    
-    
-    
+  
     self.HUD.labelText = set;
     self.HUD.removeFromSuperViewOnHide = YES;
+    
+    
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(aniTap:)];
+    [self.HUD addGestureRecognizer:tap];
+//    self.HUD.top=300;
+//      self.HUD.frame=CGRectMake(0, 1000, Vwidth, Vheight);
 }
-
+-(void)aniTap:(UITapGestureRecognizer *)tap{
+    [self stopAnimating];
+}
 
 
 -(void)startAnimatingWithString:(NSString *)set{

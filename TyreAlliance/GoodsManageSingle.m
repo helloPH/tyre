@@ -10,7 +10,9 @@
 #import "GoodsDetailCell.h"
 #import "DefaultPageSource.h"
 #import "EditViewController.h"
-@interface GoodsManageSingle ()<UITableViewDelegate,UITableViewDataSource,CellDelegate,UITextFieldDelegate>
+//#import "IQKeyboardManager.h"
+
+@interface GoodsManageSingle ()<UITableViewDelegate,UITableViewDataSource,CellDelegate,UITextFieldDelegate,UIScrollViewDelegate>
 @property (nonatomic,strong)UITableView * tableView;
 @property (nonatomic,strong)NSMutableArray * datas;
 @property (nonatomic,assign)NSInteger index;
@@ -73,10 +75,13 @@
 //                                                                              @"type":type,
 //                                                                              @"ye":[NSString stringWithFormat:@"%d",_index]
 //                                                                              }];
+
     [AnalyzeObject getProductDatasWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
         [self stopAnimating];
         [_tableView.mj_header endRefreshing];
-        
+        if (_index==1) {
+            [_datas removeAllObjects];
+        }
         
         if ([model count]==0) {
             [_tableView.mj_footer endRefreshingWithNoMoreData];
@@ -85,17 +90,20 @@
         }
         
 
-        if (_index==1) {
-            [_datas removeAllObjects];
-        }
-        if ([ret isEqualToString:@"1"]){
 
+        if ([ret isEqualToString:@"1"]){
             NSArray * datas=(NSArray *)model;
             [_datas addObjectsFromArray:datas];
+
         }else{
-            [self showPromptBoxWithSting:msg];
+
+            if (_datas.count==0) {
+
+            }
+          
         }
-          [_tableView reloadData];
+         [self showBtnEmpty:_datas.count==0?YES:NO];
+          [self reshView];
 //         [_datas arrayByAddingObjectsFromArray:datas];
         
 
@@ -104,13 +112,29 @@
         
     }];
 }
+-(void)reshView{
+    [_tableView reloadData];
+//    [self showBtnEmpty:_datas.count==0?YES:NO];
+}
+//-(void)dismissKey{
+//    [[IQKeyboardManager sharedManager]resignFirstResponder];
+//}
 -(void)newView{
     _tableView=[[UITableView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height-self.tabBarController.tabBar.height) style:UITableViewStyleGrouped];
     _tableView.separatorStyle=UITableViewCellSeparatorStyleNone;
     _tableView.delegate=self;
     _tableView.dataSource=self;
+    
+    
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_tableView addGestureRecognizer:tap];
+    
+    
+    
     [_tableView addHeardTarget:self Action:@selector(xiala:)];
     [_tableView addFooterTarget:self Action:@selector(shangla:)];
+    
+    
     
     
     [_tableView registerClass:[GoodsDetailCell class] forCellReuseIdentifier:@"cell"];
@@ -131,14 +155,14 @@
     
 }
 -(UIView *)searchView{
-    UIView * view=[[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 40*self.scale)];
+    UIView * view=[[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 45*self.scale)];
     UIImageView * bgView=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, Vwidth*2/3.0, view.height-15*self.scale)];
     bgView.backgroundColor=[UIColor whiteColor];
     bgView.userInteractionEnabled=YES;
     
     [view addSubview:bgView];
     bgView.center=view.center;
-    bgView.layer.cornerRadius=3;
+    bgView.layer.cornerRadius=5;
     bgView.layer.masksToBounds=YES;
     bgView.layer.borderColor=blackLineColore.CGColor;
     bgView.layer.borderWidth=1;
@@ -154,11 +178,15 @@
     
     UITextField * field=[[UITextField alloc]initWithFrame:CGRectMake(leftImg.right+5*self.scale, 5*self.scale, bgView.width-15*self.scale-leftImg.width, bgView.height-10*self.scale)];
     [bgView addSubview:field];
+    
     field.centerY=leftImg.centerY;
-    field.font=Small10Font(self.scale);
+    field.font=DefaultFont(self.scale);
     field.placeholder=@"请输入您要查找的商品";
     field.clearButtonMode=UITextFieldViewModeWhileEditing;
-    field.keyboardType=UIKeyboardTypeAlphabet;
+    field.keyboardType=UIKeyboardTypeDefault;
+//    field.keyboardType=UIKeyboardTypeDefault;
+    field.returnKeyType=UIReturnKeySearch;
+    
     field.delegate=self;
     _searchTf=field;
     return view;
@@ -182,8 +210,8 @@
     
     NSDictionary * proDic=_datas[indexPath.section];
     cell.labelIntro.text=[NSString stringWithFormat:@"%@",proDic[@"P_name"]];
-    [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",proDic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
-    
+    [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",proDic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
+  
     
     
 
@@ -214,9 +242,21 @@
     view.backgroundColor=[UIColor whiteColor];
     NSDictionary * dic=_datas[section];
     
+    
+    
+    UIImageView * imgView=[[UIImageView alloc]initWithFrame:CGRectMake(10*self.scale, 0, 20*self.scale, 20*self.scale)];
+    imgView.centerY=view.height/2;
+    imgView.layer.cornerRadius=imgView.width/2;
+    imgView.layer.masksToBounds=YES;
+    
+    [imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"logo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
+ 
+    //    imgView.contentMode=UIViewContentModeScaleAspectFit;
+    //    imgView.image=[UIImage imageNamed:@"logo_dingbu"];
+    [view addSubview:imgView];
 //
-    UILabel * labelTitle=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 0, 60, 20*self.scale)];
-    labelTitle.font=SmallFont(self.scale);
+    UILabel * labelTitle=[[UILabel alloc]initWithFrame:CGRectMake(imgView.right + 10*self.scale, 0, 60, 20*self.scale)];
+    labelTitle.font=Big15Font(self.scale);
     labelTitle.textColor=blackTextColor;
     labelTitle.centerY=view.height/2;
     [view addSubview:labelTitle];
@@ -225,16 +265,29 @@
        [labelTitle sizeToFit];
     
     
-    UIImageView * imgView=[[UIImageView alloc]initWithFrame:CGRectMake(labelTitle.right+10*self.scale, labelTitle.top, 50*self.scale, labelTitle.height)];
-    [imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"logo"]]]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
-//    imgView.image=[UIImage imageNamed:@"logo_dingbu"];
-    [view addSubview:imgView];
+ 
+    
+    if (_goodsType==1) {
+        UILabel * lableStates=[[UILabel alloc]initWithFrame:labelTitle.frame];
+        [view addSubview:lableStates];
+        lableStates.right=Vwidth-10*self.scale;
+        lableStates.font=DefaultFont(self.scale);
+//        lableStates.textColor=lightOrangeColor;
+        lableStates.textAlignment=NSTextAlignmentRight;
+        NSString * states=[NSString stringWithFormat:@"%@",dic[@"states"]];
+        lableStates.text=[states isEqualToString:@"0"]?@"未审核":@"已审核";
+        lableStates.textColor=[states isEqualToString:@"0"]?lightOrangeColor:navigationControllerColor;
+        
+        
+    }
+
+    
     
     return view;
 }
 
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-    return 120*self.scale;
+    return 130*self.scale;
 }
 
 #pragma  mark -- cellDelegate
@@ -249,16 +302,13 @@
             [AnalyzeObject upOrDownProductDatasWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
                 if ([ret isEqualToString:@"1"]) {
                     [self showPromptBoxWithSting:@"操作成功"];
-                    [self reshData];
                 }else{
                     [self showPromptBoxWithSting:msg];
                 }
+                 [self reshData];
               
             }];
-            
-            
-//            [self ShowAlertWithMessage:@"已成功！"];
-            
+                        
         }
         
     }];
@@ -284,6 +334,10 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+#pragma  scrollDelegate
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
 }
 
 /*

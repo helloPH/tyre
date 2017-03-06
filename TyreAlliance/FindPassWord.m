@@ -7,22 +7,28 @@
 //
 
 #import "FindPassWord.h"
+#import "IQKeyboardManager.h"
 
-@interface FindPassWord ()<UITextFieldDelegate>
+@interface FindPassWord ()<UITextFieldDelegate,UIScrollViewDelegate>
 @property (nonatomic,strong)UIScrollView * scrollView;
 @property (nonatomic,strong)UIButton * registBtn;
 
+@property (nonatomic,assign)NSInteger time;
+@property (nonatomic,strong)NSTimer * timer;
+@property (nonatomic,strong)UIButton * verBtn;
 
 @property (nonatomic,strong)UITextField * tfTel;
 @property (nonatomic,strong)UITextField * tfPwd;
 @property (nonatomic,strong)NSArray * tfs;
+@property (nonatomic,strong)NSString * textYan;
+@property (nonatomic,strong)NSString * temTel;
 @end
 
 @implementation FindPassWord
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    _temTel=@"";
     [self newNavi];
     [self newView];
     // Do any additional setup after loading the view.
@@ -39,15 +45,19 @@
 -(void)PopVC:(UIButton *)sender{
     [self.navigationController popViewControllerAnimated:YES];
 }
-
+-(void)dismissKey{
+    [[IQKeyboardManager sharedManager]resignFirstResponder];
+}
 -(void)newView{
     _scrollView=[[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
     _scrollView.backgroundColor=superBackgroundColor;
     [self.view addSubview:_scrollView];
-    
+    _scrollView.delegate=self;
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_scrollView addGestureRecognizer:tap];
     
     NSArray * titles1=@[@{@"title":@"手机号",@"place":@"请输入您注册时使用的手机号"},
-                        @{@"title":@"新密码",@"place":@"设置6-29位字母、数字或符号组合"},
+                        @{@"title":@"新密码",@"place":@"设置6-12位字母、数字或符号组合"},
                         @{@"title":@"确认密码",@"place":@"请重复输入密码"},
                         @{@"title":@"验证码",@"place":@"请输入验证码"}];
     CGFloat setY=0;
@@ -73,16 +83,30 @@
         tf.textColor=blackTextColor;
         tf.placeholder=[titles1[i]valueForKey:@"place"];
         setY=cellView.bottom;
+        tf.keyboardType=UIKeyboardTypeAlphabet;
         if (i==0) {
             _tfTel=tf;
             [tf limitText:@11];
-            tf.keyboardType=UIKeyboardTypeNumberPad;
+            tf.keyboardType=UIKeyboardTypePhonePad;
         }
         if (i==1) {
             _tfPwd=tf;
+            _tfPwd.secureTextEntry=YES;
+            [_tfPwd limitText:@12];
+        }
+        if (i==2) {
+            tf.secureTextEntry=YES;
+            [tf limitText:@12];
+        }
+        if (i==3) {
+            [tf limitText:@4];
         }
         
+        
         if (i==titles1.count-1) {
+            
+            tf.keyboardType=UIKeyboardTypeNumberPad;
+            
             UIButton * btn=[[UIButton alloc]initWithFrame:CGRectMake(0, 8*self.scale, 100*self.scale, 24*self.scale)];
             btn.titleLabel.font=SmallFont(self.scale);
             btn.right=Vwidth-10*self.scale;
@@ -93,6 +117,9 @@
             btn.layer.borderColor=lightOrangeColor.CGColor;
             [btn setTitleColor:lightOrangeColor forState:UIControlStateNormal];
             [btn setTitle:@"获取验证码" forState:UIControlStateNormal];
+            btn.tag=1011;
+            [btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
+            _verBtn=btn;
             
         }
     }
@@ -116,19 +143,76 @@
     _scrollView.contentSize=CGSizeMake(Vwidth, setY);
     
 }
+-(void)timeStart{
+    _time=60;
+    _timer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(timejian) userInfo:nil repeats:YES];
+    //    _timer=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+    //        [self timejian];
+    //    }];
+}
+-(void)timejian{
+    //    UIButton *=(UIButton *)[self.view viewWithTag:5];
+    if (_time == 0) {
+        [_timer invalidate];
+        _timer = nil;
+        _verBtn.enabled=YES;
+        [_verBtn setTitle:[NSString stringWithFormat:@"获取验证码"] forState:UIControlStateNormal];
+//        _time = 60;
+    }else
+    {
+        [_verBtn setTitle:[NSString stringWithFormat:@"%ld秒",(long)_time] forState:UIControlStateNormal];
+        _verBtn.enabled=NO;
+        _time--;
+    }
+}
 -(void)btnEvent:(UIButton *)sender{
+    UITextField * tfTel;
     
-    
-    
-    NSString * tempPassWord;
     for (UITextField * tf in _tfs) {
         if ([tf isKindOfClass:[UITextField class]]) {
             if (tf.tag==100) {//用户名或手机号
-                if (![tf.text isValidateNickname]&&![tf.text isValidateMobileAndTel]) {
-                    [self ShowAlertWithMessage:@"请输入正确的用户名或者手机号"];
-                    return ;
-                }
+                tfTel=tf;
             }
+        }
+    
+    }
+    if (![tfTel.text isValidateMobileAndTel]) {
+        [self ShowAlertWithMessage:@"请输入正确的手机号"];
+        return ;
+    }
+    
+    NSString * tempPassWord;
+      UITextField * tfVer=((UITextField *)_tfs[3]);
+    if(sender.tag==1011){
+        UITextField * tfTel=((UITextField *)_tfs[0]);
+        _temTel=tfTel.text;
+        if ([tfTel.text isValidateMobile]) {
+            NSDictionary * dic=@{@"tel":tfTel.text,
+                                 @"type":@"1"};
+            [self startAnimating:nil];
+            [AnalyzeObject getVerifyCodeWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+                [self stopAnimating];
+                
+                if ([ret isEqualToString:@"1"]) {
+                    _textYan=[(NSDictionary *)model valueForKey:@"code"];
+                    [self timeStart];
+                }else{
+                    [self showPromptBoxWithSting:msg];
+                }
+            }];
+        }else{
+        [self ShowAlertWithMessage:@"请输入正确的手机号"];
+        }
+        
+        return;
+    }
+    if (![_temTel isEqualToString:_tfTel.text]) {
+        [self ShowAlertWithMessage:@"请确保输入的手机号与获取验证码的手机号一致"];
+        return ;
+    }
+    
+    for (UITextField * tf in _tfs) {
+        if ([tf isKindOfClass:[UITextField class]]) {
             if (tf.tag==101) {//登录密码
                 if (![tf.text isValidatePassword]){
                     [self ShowAlertWithMessage:@"请输入正确的密码格式"];
@@ -147,27 +231,30 @@
                 }
             }
             
-//            if (tf.tag==103) {
-//                if ([tf.text isEqualToString:@""]) {
-//                    [self ShowAlertWithMessage:@"验证码不能为空"];
-//                    return;
-//                }
-//            }
+            if (tf.tag==103) {
+                if (![tf.text isEqualToString:_textYan]) {
+                    [self ShowAlertWithMessage:@"验证码不正确！"];
+                    return;
+                }
+            }
         }
     }
     
-    NSDictionary * dic=@{@"tel":[NSString stringWithFormat:@"%@",_tfTel.text],
-                         @"pwd":[NSString stringWithFormat:@"%@",_tfPwd.text]
-//                                                      @"yqm":[NSString stringWithFormat:@"%@",_tfVer.text]
+    
+    
+    NSString * telValue=[_tfTel.text Des_EncryptForKey:DesKey Iv:DesValue];
+    NSString * pwdValue=[_tfTel.text Des_EncryptForKey:DesKey Iv:DesValue];
+    NSString * verValue=[_tfTel.text Des_EncryptForKey:DesKey Iv:DesValue];
+    
+    
+    NSDictionary * dic=@{@"tel":[NSString stringWithFormat:@"%@",telValue],
+                         @"pwd":[NSString stringWithFormat:@"%@",pwdValue]
+//                         ,@"yqm":[NSString stringWithFormat:@"%@",tfVer.text]
                          };
-    
-    
-    
+
     [AnalyzeObject findPwdWithDic:dic WithBlock:^(id models, NSString *code, NSString *msg) {
         if ([code isEqualToString:@"1"]) {
             [((AppDelegate *)([UIApplication sharedApplication].delegate)) switchRootController];
-//            BeComeMerchant * become=[BeComeMerchant new];
-//            [self.navigationController pushViewController:become animated:YES];
         }else{
           
         }
@@ -201,6 +288,10 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+#pragma  mark -- scrollDelegate
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
 }
 
 /*

@@ -9,5 +9,5 @@
 #import "SuperViewController.h"
 
 @interface MessageDeatail : SuperViewController
-
+@property (nonatomic,strong)NSDictionary * infoDic;
 @end

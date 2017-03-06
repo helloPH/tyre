@@ -16,6 +16,7 @@ typedef NS_ENUM(NSInteger, ListType) {
 @interface SelectViewController : SuperViewController
 @property (nonatomic,assign)ListType listType;
 @property (nonatomic,strong)NSString * selectedPara;
-@property (nonatomic,strong)void (^callBack)(NSString * para);
+@property (nonatomic,strong)NSString * selectedId;
+@property (nonatomic,strong)void (^callBack)(NSString * para,NSString * index);
 
 @end

@@ -9,5 +9,5 @@
 #import "SuperViewController.h"
 
 @interface HelpCenter : SuperViewController
-
+@property (nonatomic,strong)NSString * textString;
 @end

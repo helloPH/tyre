@@ -7,12 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
-
+typedef void(^AlertBloc)(NSInteger index);
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 
 -(void)switchRootController;
 -(void)zhuce;
+-(void)unRegistNoti;
 @end
 

@@ -17,7 +17,7 @@
 #define iPhone6 ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(750, 1334), [[UIScreen mainScreen] currentMode].size) : NO)
 #define iPhone6Plus ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(1242, 2208), [[UIScreen mainScreen] currentMode].size) : NO)
 //#define ImgDuanKou        @"http://122.114.98.248:1180"
-#define ImgDuanKou        @"http://tlm.ruanmengapp.com"
+#define ImgDuanKou        @"http://www.taizhimeng.com"
 
 #define Vwidth [UIScreen mainScreen].bounds.size.width
 #define Vheight [UIScreen mainScreen].bounds.size.height
@@ -33,7 +33,7 @@
 #define blackLineColore [UIColor colorWithRed:220/255.0 green:220/255.0 blue:220/255.0 alpha:1]
 #define superBackgroundColor [UIColor colorWithRed:243/255.0 green:243/255.0 blue:243/255.0 alpha:1]
 #define tabBarBackgroundColor [UIColor colorWithRed:210/255.0 green:210/255.0 blue:210/255.0 alpha:1]
-#define navigationControllerColor [UIColor colorWithRed:57/255.0 green:99/255.0 blue:197/255.0 alpha:1]
+#define navigationControllerColor [UIColor colorWithRed:44/255.0 green:75/255.0 blue:184/255.0 alpha:1]
 #define TextColor [UIColor colorWithRed:131/255.0 green:92/255.0 blue:218/255.0 alpha:1]
 
 
@@ -70,8 +70,8 @@
 #define DegreesToRadians(x) ((x) * M_PI / -180.0)
 
 #pragma mark - DES加密
-#define DESKey   @"CRsc123."
-#define DESIV      @"@#$~^&*!"
+#define DesKey  @"yz@*$S*c"
+#define DesValue  @"%LAMsed6"
 
 /*
  public const string appkey = "p5tvi9dst0vz4";

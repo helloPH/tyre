@@ -12,9 +12,13 @@
 #import "About.h"
 #import "RelationService.h"
 #import "CacheManager.h"
+#import "UpDatePassWord.h"
+
+#import "GuideViewViewController.h"
 
 @interface SettingCenter ()
 @property (nonatomic,strong)NSMutableDictionary * dataDic;
+@property (nonatomic,strong)UILabel * labelCache;
 @end
 
 @implementation SettingCenter
@@ -50,14 +54,20 @@
                 [_dataDic removeAllObjects];
             }
             [_dataDic addEntriesFromDictionary:model];
+            [self reshView];
         }else{
             [self showPromptBoxWithSting:msg];
         }
     }];
 }
-
+-(void)reshView{
+//    _lableVer.textColor=navigationControllerColor;
+//    _lableVer.text=[NSString stringWithFormat:@"V%@",_dataDic[@"Userversion"]];
+    
+    
+}
 -(void)newView{
-    NSArray * titles=@[@"帮助中心",@"意见反馈",@"关于我们",@"联系客服",@"清除缓存",@"版本更新"];
+    NSArray * titles=@[@"帮助中心",@"意见反馈",@"关于我们",@"联系客服",@"清除缓存",@"修改密码"];
     CGFloat setY=0;
     for (int i = 0; i < titles.count; i ++) {
         CellView * cellView=[[CellView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+10*self.scale + i * 40*self.scale, Vwidth, 40*self.scale)];
@@ -67,6 +77,24 @@
         cellView.btn.tag=100+i;
         [cellView.btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
         setY=cellView.bottom;
+        
+        UILabel * label=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, 100, 20)];
+        label.right=cellView.RightImg.left-10*self.scale;
+        label.centerY=cellView.RightImg.centerY;
+        label.textColor=lightOrangeColor;
+        label.textAlignment=NSTextAlignmentRight;
+        label.font=DefaultFont(self.scale);
+        [cellView addSubview:label];
+        if (i==4) {
+            label.text=[NSString stringWithFormat:@"%.2fM",[[CacheManager defaultCacheManager] GetCacheSize]];
+            _labelCache=label;
+        }
+        if (i==5) {
+//            _lableVer=label;
+        }
+       
+        
+        
     }
     
     UIButton * logoutbtn=[[UIButton alloc]initWithFrame:CGRectMake(20*self.scale, setY+20*self.scale, Vwidth-40*self.scale, 40*self.scale)];
@@ -85,7 +113,11 @@
 -(void)btnEvent:(UIButton *)sender{
     switch (sender.tag) {
         case 100:{//帮助中心
-            [self.navigationController pushViewController:[HelpCenter new] animated:YES];
+            HelpCenter * help=[HelpCenter new];
+            NSString * bodyString=[[NSString stringWithFormat:@"%@",_dataDic[@"help"]] isEmptyString]?@"":[NSString stringWithFormat:@"%@",_dataDic[@"help"]];
+
+            help.textString=[NSString stringWithFormat:@"<!DOCTYPE><html><head></head><body>%@</body></html>",bodyString];
+            [self.navigationController pushViewController:help animated:YES];
         
         }
             break;
@@ -96,13 +128,25 @@
             break;
          
         case 102:{//关于我们
-            [self.navigationController pushViewController:[About new] animated:YES];
+            About * about=[About new];
+            NSString * aboutString=[[NSString stringWithFormat:@"%@",_dataDic[@"about"]] isEmptyString]?@"":[NSString stringWithFormat:@"%@",_dataDic[@"about"]];
+            
+            about.urlString=[NSString stringWithFormat:@"<!DOCTYPE><html><head></head><body>%@</body></html>",aboutString];
+            [self.navigationController pushViewController:about animated:YES];
+   
+//            [self.navigationController pushViewController:[GuideViewViewController new] animated:YES];
+            
         }
             break;
             
             
         case 103:{//联系客服
-            [self.navigationController pushViewController:[RelationService new] animated:YES];
+            
+            RelationService * relation=[RelationService new];
+            relation.telString=[[NSString stringWithFormat:@"%@",_dataDic[@"tel"]] isEmptyString]?@"":[NSString stringWithFormat:@"%@",_dataDic[@"tel"]] ;
+            relation.qqString=[[NSString stringWithFormat:@"%@",_dataDic[@"qq"]]isEmptyString]?@"":[NSString stringWithFormat:@"%@",_dataDic[@"qq"]];
+            [self.navigationController pushViewController:relation animated:YES];
+            
         }
             break;
         case 104:{//清除缓存
@@ -110,6 +154,7 @@
                 if (index==1) {
                     [[CacheManager defaultCacheManager]clearCache:^(BOOL success) {
                         [self showPromptBoxWithSting:@"已清空全部缓存!"];
+                        _labelCache.text=[NSString stringWithFormat:@"%.2fM",[[CacheManager defaultCacheManager] GetCacheSize]];
                     }];
                 }
             }];
@@ -117,17 +162,28 @@
 
         }
             break;
-        case 105:{//版本更新
+        case 105:{//修改密码
+            
+            UpDatePassWord * upDate=[UpDatePassWord new];
+            [self.navigationController pushViewController:upDate animated:YES];
+            
+            
+        }
+            break;
+        case 106:{
+            
             
         }
             break;
         case 1000:{
             [self ShowAlertTitle:@"提示" Message:@"确定退出登录?" Delegate:self Block:^(NSInteger index) {
                 if (index==1) {
+                    [[Stockpile sharedStockpile] setAccount:@""];
                     [[Stockpile sharedStockpile] setID:@""];
                     [[Stockpile sharedStockpile] setName:@""];
                     [[Stockpile sharedStockpile] setLogo:@""];
                     [[Stockpile sharedStockpile] setIsLogin:NO];
+                    [(AppDelegate *)[UIApplication sharedApplication].delegate unRegistNoti];
                     [(AppDelegate *)[UIApplication sharedApplication].delegate switchRootController];
                 }
             }];

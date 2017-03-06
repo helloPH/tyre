@@ -8,22 +8,29 @@
 
 #import "MerchantEnter.h"
 #import "BeComeMerchant.h"
+#import "IQKeyboardManager.h"
 
-@interface MerchantEnter ()<UITextFieldDelegate>
+@interface MerchantEnter ()<UITextFieldDelegate,UIScrollViewDelegate>
 @property (nonatomic,strong)UIScrollView * scrollView;
 @property (nonatomic,strong)NSArray * tfs;
 @property (nonatomic,strong)UIButton * registBtn;
-
+@property (nonatomic,assign)NSInteger time;
+@property (nonatomic,strong)NSTimer * timer;
+@property (nonatomic,strong)NSString * temTel;
+@property (nonatomic,strong)UIButton * verBtn;
 
 @property (nonatomic,strong)UITextField * tfTel;
 @property (nonatomic,strong)UITextField * tfVer;
 @property (nonatomic,strong)UITextField * tfPwd;
+
+@property (nonatomic,strong)NSString * textYan;
 @end
 
 @implementation MerchantEnter
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    _textYan=@"";
     [self newNavi];
     [self newView];
     // Do any additional setup after loading the view.
@@ -40,14 +47,19 @@
 -(void)PopVC:(UIButton *)sender{
     [self.navigationController popViewControllerAnimated:YES];
 }
-
+-(void)dismissKey{
+    [[IQKeyboardManager sharedManager]resignFirstResponder];
+}
 -(void)newView{
     _scrollView=[[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
     [self.view addSubview:_scrollView];
+    _scrollView.delegate=self;
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_scrollView addGestureRecognizer:tap];
     
     NSArray * titles=@[@{@"img":@"phone_tel",@"title":@"请输入手机号码"},
                        @{@"img":@"key_yao",@"title":@"请输入验证码"},
-                       @{@"img":@"mima_ma",@"title":@"请设置登录密码"}];
+                       @{@"img":@"mima_ma",@"title":@"设置6-12位字母、数字或符号组合"}];
     CGFloat setY=0;
      NSMutableArray * tfms=[NSMutableArray array];
     for (int i = 0; i < titles.count; i ++) {
@@ -67,7 +79,7 @@
         setY=cellView.bottom;
         if (i==0) {
             _tfTel=tf;
-            tf.keyboardType=UIKeyboardTypeNumberPad;
+            tf.keyboardType=UIKeyboardTypePhonePad;
             [tf limitText:@11];
         }
        
@@ -75,7 +87,8 @@
         
         if (i==1) {
             _tfVer=tf;
-//            tf.keyboardType=UIKeyboardTypePhonePad;
+            [_tfVer limitText:@4];
+            tf.keyboardType=UIKeyboardTypeNumberPad;
             UIButton * btn=[[UIButton alloc]initWithFrame:CGRectMake(0, 8*self.scale, 100*self.scale, 24*self.scale)];
             btn.titleLabel.font=SmallFont(self.scale);
             btn.right=Vwidth-10*self.scale;
@@ -88,9 +101,13 @@
             [btn setTitle:@"获取验证码" forState:UIControlStateNormal];
             [btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
             btn.tag=1000;
+            _verBtn=btn;
         }
         if (i==2) {
             _tfPwd=tf;
+            _tfPwd.secureTextEntry=YES;
+            [_tfPwd limitText:@12];
+            _tfPwd.keyboardType=UIKeyboardTypeAlphabet;
         }
         [tfms addObject:tf];
     }
@@ -102,7 +119,7 @@
     _registBtn.layer.cornerRadius=4;
     _registBtn.layer.masksToBounds=YES;
     _registBtn.titleLabel.font=BigFont(self.scale);
-    [_registBtn setTitle:@"下一步" forState:UIControlStateNormal];
+    [_registBtn setTitle:@"注册" forState:UIControlStateNormal];
     [_registBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [_registBtn setBackgroundImage:[UIImage ImageForColor:[UIColor lightGrayColor]] forState:UIControlStateNormal];
     [_registBtn setBackgroundImage:[UIImage ImageForColor:navigationControllerColor] forState:UIControlStateSelected];
@@ -113,20 +130,46 @@
     
     
 }
+-(void)timeStart{
+    _time=60;
+    _timer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(timejian) userInfo:nil repeats:YES];
+    //    _timer=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+    //        [self timejian];
+    //    }];
+}
+-(void)timejian{
+    //    UIButton *=(UIButton *)[self.view viewWithTag:5];
+    if (_time == 0) {
+        [_timer invalidate];
+        _timer = nil;
+        _verBtn.enabled=YES;
+        [_verBtn setTitle:[NSString stringWithFormat:@"获取验证码"] forState:UIControlStateNormal];
+//        _time = 60;
+    }else
+    {
+        [_verBtn setTitle:[NSString stringWithFormat:@"%ld秒",(long)_time] forState:UIControlStateNormal];
+        _verBtn.enabled=NO;
+        _time--;
+    }
+}
 -(void)btnEvent:(UIButton*)sender{
 
     //用户名或手机号
     
-    if (![_tfTel.text isValidateMobileAndTel]) {
+    if (![_tfTel.text isValidateMobile]) {
         [self ShowAlertWithMessage:@"请输入正确的手机号"];
         return ;
     }
     if (sender.tag==1000) {
         NSDictionary * dic=@{@"tel":_tfTel.text,@"type":@"0"};//,@"action":@"Message"};
+        _temTel=_tfTel.text;
+        [self startAnimating:nil];
         [AnalyzeObject getVerifyCodeWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+            [self stopAnimating];
             if ([ret isEqualToString:@"1"]) {
-                _tfVer.text=[(NSDictionary *)model valueForKey:@"code"];
-                [self ShowAlertWithMessage:@"验证码获取成功"];
+                _textYan=[(NSDictionary *)model valueForKey:@"code"];
+//                _tfVer.text=_textYan;
+                [self timeStart];
             }else{
                 [self ShowAlertWithMessage:msg];
             }
@@ -135,33 +178,57 @@
     }
 
     
-    //注册 
+    //注册
+//    if (![_tfTel.text isValidateMobile]) {
+//        [self ShowAlertWithMessage:@"请输入正确的手机号码格式"];
+//        return ;
+//    }
+    
+    if (_temTel) {
+        if (![_tfTel.text isEqualToString:_temTel]) {
+            [self ShowAlertWithMessage:@"提交手机号与获取验证码手机号不一致!"];
+            return ;
+        }
+    }
+    
+
+    
+
+    if (![_textYan isEqualToString:_tfVer.text]) {
+        [self showPromptBoxWithSting:@"请输入正确的验证码"];
+        return ;
+    }
+    
     if (![_tfPwd.text isValidatePassword]) {
         [self ShowAlertWithMessage:@"请输入正确的密码格式"];
         return ;
     }
-    
     if (sender.tag==1001) {
         NSDictionary * dic=@{@"tel":[NSString stringWithFormat:@"%@",_tfTel.text],
                              @"pwd":[NSString stringWithFormat:@"%@",_tfPwd.text]
+//                             ,
 //                             @"yqm":[NSString stringWithFormat:@"%@",_tfVer.text]
                              };
     
         [AnalyzeObject registerWithDic:dic WithBlock:^(id models, NSString *code, NSString *msg) {
             if ([code isEqualToString:@"1"]) {
+                [[Stockpile sharedStockpile] setID:[NSString stringWithFormat:@"%@",models]];
+                [self showPromptInWindowWithString:@"注册成功，请申请成为商家！"];
                 
-            BeComeMerchant * become=[BeComeMerchant new];
-            [self.navigationController pushViewController:become animated:YES];
-                
+                BeComeMerchant * become=[BeComeMerchant new];
+                [self.navigationController pushViewController:become animated:YES];
+    
+         
             }else{
-               
+                [self showPromptBoxWithSting:msg];
             }
-            [self showPromptBoxWithSting:msg];
+          
 
         }];
     }
 
 }
+
 #pragma  mark -- textField delegate
 -(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string{
     // 判断  提交按钮是否可用
@@ -185,6 +252,11 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+#pragma  mark -- scrollDelegate
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
 }
 
 /*

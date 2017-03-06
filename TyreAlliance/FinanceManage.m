@@ -11,9 +11,12 @@
 //#import "DangDingYinHangViewController.h"
 #import "WithDraw.h"
 #import "SettleOrder.h"
-#import "RecomIncome.h"
+//#import "RecomIncome.h"
+#import "RecomMan.h"
 
-
+#import "WithDrawRecord.h"
+#import "EditBankCard.h"
+#import "EditFinanceAccount.h"
 
 @interface FinanceManage ()
 @property (nonatomic,strong)UIScrollView * scrollView;
@@ -41,10 +44,28 @@
         [popBtn setImage:[UIImage imageNamed:@"left_b"] forState:UIControlStateHighlighted];
     [popBtn addTarget:self action:@selector(PopVC:) forControlEvents:UIControlEventTouchUpInside];
     [self.NavImg addSubview:popBtn];
+      popBtn.tag=100;
+    
+    
+    UIButton * recordBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, 0, 70*self.scale, 20*self.scale)];
+    [recordBtn setTitle:@"提现记录" forState:UIControlStateNormal];
+    recordBtn.titleLabel.font=DefaultFont(self.scale);
+    recordBtn.tintColor=blackTextColor;
+    [recordBtn sizeToFit];
+   
+    recordBtn.centerY=popBtn.centerY;
+    recordBtn.right=Vwidth-10*self.scale;
+    [recordBtn addTarget:self action:@selector(PopVC:) forControlEvents:UIControlEventTouchUpInside];
+    [self.NavImg addSubview:recordBtn];
+    recordBtn.tag=101;
     
 }
 -(void)PopVC:(UIButton *)sender{
-    [self.navigationController popViewControllerAnimated:YES];
+    if (sender.tag==100) {
+        [self.navigationController popViewControllerAnimated:YES];
+    }else{
+        [self.navigationController pushViewController:[WithDrawRecord new] animated:YES];
+    }
 }
 -(void)initData{
     _dataDic=[NSMutableDictionary dictionary];
@@ -66,8 +87,13 @@
     
 }
 -(void)reshView{
-    _labelMoney.text=[NSString stringWithFormat:@"￥%@",_dataDic[@"allmoney"]];
+    if ([[NSString stringWithFormat:@"%@",_dataDic[@"isexc"]]isEqualToString:@"1"]) {
     _labelCard.text=[NSString stringWithFormat:@"%@",_dataDic[@"banl_num"]];
+    }else{
+    _labelCard.text=@"";
+    }
+    _labelMoney.text=[NSString stringWithFormat:@"￥%@",_dataDic[@"allmoney"]];
+  
     _labelRecom.text=[NSString stringWithFormat:@"￥%@",_dataDic[@"ShouYi"]];
     
     
@@ -88,7 +114,8 @@
     accountTitle.font=DefaultFont(self.scale);
     
     UILabel * accountCount=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, accountTitle.bottom+20*self.scale, Vwidth/2, 20*self.scale)];
-    accountCount.font=Big16Font(self.scale);
+    accountCount.font=[UIFont systemFontOfSize:18*self.scale];
+//    Big18Font(self.scale);
     accountCount.textColor=lightOrangeColor;
     [firstView addSubview:accountCount];
     firstView.height=accountCount.bottom+10*self.scale;
@@ -106,7 +133,7 @@
         
         cellView.btn.tag=100+i;
         [cellView.btn addTarget:self action:@selector(skip:) forControlEvents:UIControlEventTouchUpInside];
-        UILabel * label=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, 150*self.scale, 20*self.scale)];
+        UILabel * label=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, 200*self.scale, 20*self.scale)];
         label.font=DefaultFont(self.scale);
         label.textColor=grayTextColor;
         label.textAlignment=NSTextAlignmentRight;
@@ -128,14 +155,67 @@
 }
 -(void)skip:(UIButton *)sender{
     switch (sender.tag) {
-        case 100:{
+        case 100:{////  编辑银行卡
+
+             /// 以前的编辑银行卡
+//            EditBankCard * edit=[EditBankCard new];
+//            edit.isHave=[[NSString stringWithFormat:@"%@",_dataDic[@"isexc"]] isEqualToString:@"1"]?YES:NO;
+//            edit.block=^(BOOL success){
+//                [self reshData];
+//            };
+//            
+//            edit.cId=[NSString stringWithFormat:@"%@",_dataDic[@"bank_id"]];
+//            [self.navigationController pushViewController:edit animated:YES];
             
             
-            [self.navigationController pushViewController:[MyBankCard new] animated:YES];
+            EditFinanceAccount * edit=[EditFinanceAccount new];
+            edit.isHave=[[NSString stringWithFormat:@"%@",_dataDic[@"isexc"]] isEqualToString:@"1"]?YES:NO;
+//            edit.isHave=NO;
+            edit.cId=[NSString stringWithFormat:@"%@",_dataDic[@"bank_id"]];
+            edit.block=^(BOOL success){
+            [self reshData];
+                            };
+            [self.navigationController pushViewController:edit animated:YES];
         }
             break;
         case 101:{
-            [self.navigationController pushViewController:[WithDraw new] animated:YES];
+  
+            if ([[NSString stringWithFormat:@"%@",_dataDic[@"isexc"]]isEqualToString:@"1"]) {
+                WithDraw * with=[WithDraw new];
+                with.stringJin=[NSString stringWithFormat:@"%@",_dataDic[@"allmoney"]];
+                with.block=^(BOOL isSuccess){
+                    [self reshData];
+                };
+                [self.navigationController pushViewController:with animated:YES];
+            }else{
+                [self ShowAlertTitle:@"提示" Message:@"还未绑定银行卡，是否去绑定？" Delegate:self Block:^(NSInteger index) {
+                    if (index==1) {
+                        
+                        
+                        /// 以前的编辑银行卡
+//                        EditBankCard * edit=[EditBankCard new];
+//                        edit.isHave=NO;
+//                        edit.block=^(BOOL success){
+//                            [self reshData];
+//                        };
+//                        [self.navigationController pushViewController:edit animated:YES];
+                        
+                        
+                        EditFinanceAccount * edit=[EditFinanceAccount new];
+                        edit.isHave=NO;
+                        edit.block=^(BOOL success){
+                                [self reshData];
+                            };
+                        [self.navigationController pushViewController:edit animated:YES];
+                    }
+                }];
+                
+                
+//                _labelCard.text=@"";
+            }
+            
+            
+
             
         }
             break;
@@ -152,7 +232,7 @@
         }
             break;
         case 104:{
-            [self.navigationController pushViewController:[RecomIncome new] animated:YES];
+            [self.navigationController pushViewController:[RecomMan new] animated:YES];
         }
             break;
         default:

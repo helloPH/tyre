@@ -7,10 +7,13 @@
 //
 
 #import "FeedBackDeatil.h"
+#import "ZLPickerBrowserViewController.h"
 
-@interface FeedBackDeatil ()
+
+@interface FeedBackDeatil ()<ZLPickerBrowserViewControllerDelegate,ZLPickerBrowserViewControllerDataSource>
 @property (nonatomic,strong)NSMutableArray * imgs;
 @property (nonatomic,assign)NSInteger  states;
+//@property (nonatomic,assign)NSInteger photoIndex;
 
 
 @property (nonatomic,strong)NSMutableDictionary * dataDic;
@@ -25,12 +28,11 @@
     [super viewDidLoad];
     [self initData];
     [self newNavi];
-//    [self newView];
     [self reshData];
     // Do any additional setup after loading the view.
 }
 -(void)newNavi{
-    self.TitleLabel.text=@"反馈详细";
+    self.TitleLabel.text=@"反馈详情";
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
     [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
     [popBtn setImage:[UIImage imageNamed:@"left_b"] forState:UIControlStateHighlighted];
@@ -42,24 +44,31 @@
     [self.navigationController popViewControllerAnimated:YES];
 }
 -(void)initData{
+//    _photoIndex=0;
     _dataDic=[NSMutableDictionary dictionary];
     _states=0;
     _imgs=[NSMutableArray array];
     
 }
 -(void)reshData{
-    _fid=@"2";
+//    _fid=@"2";
+    
+    [self startAnimating:nil];
     NSDictionary * dic=@{@"id":_fid};
     if (_dataDic) {
         [_dataDic removeAllObjects];
     }
+    if (_imgs) {
+        [_imgs removeAllObjects];
+    }
    [AnalyzeObject getFeedBackDetailWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+       [self stopAnimating];
         if ([ret isEqualToString:@"1"]) {
             [_dataDic addEntriesFromDictionary:model];
             [_imgs addObjectsFromArray:_dataDic[@"Logos"]];
             [self newView];
          }else{
-        
+//        self startAnimatingWithString:ms
              [self showPromptBoxWithSting:msg];
          }
        
@@ -95,18 +104,19 @@
     imgView.layer.masksToBounds=YES;
     imgView.layer.borderColor=blackLineColore.CGColor;
     imgView.layer.borderWidth=0.5;
-    [imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_dataDic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
+     imgView.contentMode=UIViewContentModeScaleAspectFit;
+    [imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_dataDic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
     [_scrollView addSubview:imgView];
     imgView.frame=CGRectMake(10*self.scale, line1.top+10*self.scale, 90*self.scale, 90*self.scale);
     
     
      UILabel * labelName=[UILabel new];
     [_scrollView addSubview:labelName];
-    labelName.numberOfLines=1;
+    labelName.numberOfLines=2;
     labelName.font=SmallFont(self.scale);
     labelName.textColor=blackTextColor;
     [_scrollView addSubview:labelName];
-    labelName.frame=CGRectMake(imgView.right+10*self.scale, imgView.top, Vwidth-30*self.scale-imgView.width, 20*self.scale) ;
+    labelName.frame=CGRectMake(imgView.right+10*self.scale, imgView.top, Vwidth-30*self.scale-imgView.width, 35*self.scale) ;
     labelName.text=[NSString stringWithFormat:@"名称:%@",_dataDic[@"P_name"]];
     
     UILabel * labelPrice=[UILabel new];
@@ -118,7 +128,7 @@
     labelPrice.frame=labelName.frame;
     labelPrice.font=Big15Font(self.scale);
     labelPrice.textColor=lightOrangeColor;
-    labelPrice.centerY=imgView.centerY;
+    labelPrice.centerY=imgView.centerY+5*self.scale;
 //    labelPrice.text=[NSString stringWithFormat:@"现价:￥%@ 原价:￥%@",_dataDic[@"P_NewPrice"],_dataDic[@"P_OldPrice"]];
     NSString * xian=[NSString stringWithFormat:@"￥%@  ",_dataDic[@"P_NewPrice"]];
     NSString * yuan=[NSString stringWithFormat:@"原价￥%@",_dataDic[@"P_OldPrice"]];
@@ -165,19 +175,44 @@
     CGFloat spX=20*self.scale;
     CGFloat spY=20*self.scale;
     CGFloat btnW=(Vwidth-marginX*2-(column-1)*spX)/column;
-    CGFloat btnH=btnW*0.66;
+    CGFloat btnH=btnW*0.75;
     
     CGFloat setY=line3.top+10*self.scale;
+    
+
+    
     for (int i =0; i < _imgs.count; i ++) {
         CGFloat btnX= i % column*(spX+btnW) +marginX;
         CGFloat btnY= i / column*(spY+btnH) +10*self.scale+line3.top;
         UIImageView * img= [[ UIImageView alloc]initWithFrame:CGRectMake(btnX , btnY, btnW , btnH)];
         [_scrollView addSubview:img];
-        [img setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:_imgs[i]]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
-        setY=img.bottom;
+        img.contentMode=UIViewContentModeScaleAspectFill;
+        img.layer.masksToBounds=YES;
+        [img setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:_imgs[i]]] placeholderImage:[UIImage imageNamed:@"noData"]];
+//        setY=img.bottom;
+        img.userInteractionEnabled=YES;
+//        _photoIndex=i;
+        img.tag=100+i;
+        
+        UILabel * labelTitle=[[UILabel alloc]initWithFrame:CGRectMake(img.left, img.bottom+10*self.scale, img.width, 20*self.scale)];
+        labelTitle.font=DefaultFont(self.scale);
+        labelTitle.textColor=blackTextColor;
+        labelTitle.textAlignment=NSTextAlignmentCenter;
+        labelTitle.text=[NSString stringWithFormat:@"图片%d",i+1];
+        [_scrollView addSubview:labelTitle];
+        setY=labelTitle.bottom;
+        
+        
+        UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(skipToPhotoBrower:)];
+        [img addGestureRecognizer:tap];
     }
 
     UIView * line4 = [[UIView alloc]initWithFrame:CGRectMake(0, setY+10*self.scale, Vwidth, 0.5*self.scale)];
+    if (_imgs.count==0) {
+        line4.top=line3.top;
+    }
+    
+    
     line4.backgroundColor=blackLineColore;
     [_scrollView addSubview:line4];
     
@@ -204,8 +239,10 @@
         [self.view addSubview:_bottomView];
     }
     [_bottomView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
-  
-        NSArray * btnTitles=@[@"上级代理审核",@"生产厂家审核",@"审核结束"];
+    
+    
+    NSString * states=[NSString stringWithFormat:@"%@",_dataDic[@"states"]];
+        NSArray * btnTitles=@[@"上级代理商审核",@"生产厂家审核",@"审核结束"];
         for (int i = 0; i < btnTitles.count; i ++) {
             UIButton * btn = [[UIButton alloc]initWithFrame:CGRectMake(0, 0, 100,_bottomView.height)];
             [_bottomView addSubview:btn];
@@ -231,6 +268,7 @@
                 case 2:
                     btn.width=Vwidth*(2/7.0);
                     btn.right=Vwidth;
+                    [btn setTitleColor:grayTextColor forState:UIControlStateSelected];
                     [btn setTitleColor:blackTextColor forState:UIControlStateNormal];
                     [btn setBackgroundImage:[UIImage ImageForColor:[UIColor whiteColor]] forState:UIControlStateNormal];
                     break;
@@ -240,16 +278,38 @@
             }
     
             
-        NSString * states=[NSString stringWithFormat:@"%@",_dataDic[@"states"]];
-        btn.enabled=[states isEqualToString:[NSString stringWithFormat:@"%d",i]];
+        BOOL isU=states.integerValue == [NSString stringWithFormat:@"%d",i].integerValue;
+        BOOL isA=states.integerValue <= [NSString stringWithFormat:@"%d",i].integerValue;
+            
+            
+         btn.userInteractionEnabled=isU;
+//        btn.enabled=[states isEqualToString:[NSString stringWithFormat:@"%d",i]];
         [btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
+        btn.selected=!isA;
+            if (!isA) {
+                btn.alpha=.5;
+            }
+            
 //              setY =btn.bottom;
         }
+    NSString * statess;
+    if ([states isEqualToString:@"0"]) {
+        statess=@"还未审核，请上级代理商审核";
+    }else if([states isEqualToString:@"1"]){
+        statess=@"代理商已审核，请进行下一步";
+    }else if([states isEqualToString:@"2"]){
+        statess=@"厂家已审核，请进行下一步";
+    }else if ([states isEqualToString:@"3"]){
+        statess=@"审核已结束，请耐心等待回复";
+    }
+    [self startAnimatingWithString:statess];
+//    [self showPromptBoxWithSting:statess];
+    
 }
 -(void)btnEvent:(UIButton *)sender{
     NSString * states=[NSString stringWithFormat:@"%@",_dataDic[@"states"]];
-    NSDictionary * dic=@{@"id":[Stockpile sharedStockpile].ID,
-                         @"states":[NSString stringWithFormat:@"%d",[states integerValue]+1]};
+    NSDictionary * dic=@{@"id":_fid,
+                         @"states":[NSString stringWithFormat:@"%ld",[states integerValue]+1]};
     
     [self startAnimating:nil];
     [AnalyzeObject EVFeedBackWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
@@ -257,14 +317,33 @@
         if ([ret isEqualToString:@"1"]) {
             [self reshData];
         }else{
-            [self showPromptBoxWithSting:msg];
+         
         }
+           [self showPromptBoxWithSting:msg];
     }];
     
     
     
     
 
+}
+
+#pragma  mark photoBrower
+-(void)skipToPhotoBrower:(UITapGestureRecognizer*)tap{
+    ZLPickerBrowserViewController * brower=[ZLPickerBrowserViewController new];
+    brower.delegate=self;
+    brower.dataSource=self;
+    brower.currentPage=tap.view.tag-100;
+    [self.navigationController pushViewController:brower animated:YES];
+}
+-(NSInteger)numberOfPhotosInPickerBrowser:(ZLPickerBrowserViewController *)pickerBrowser{
+    return _imgs.count;
+}
+-(ZLPickerBrowserPhoto *)photoBrowser:(ZLPickerBrowserViewController *)pickerBrowser photoAtIndex:(NSUInteger)index{
+    NSString * imgString= [NSString stringWithFormat:@"%@%@",ImgDuanKou,_imgs[index]];
+    NSURL * imgUrl=[NSURL URLWithString:imgString];
+    ZLPickerBrowserPhoto * photo=[ZLPickerBrowserPhoto photoAnyImageObjWith:imgUrl];
+    return photo;
 }
 
 - (void)didReceiveMemoryWarning {

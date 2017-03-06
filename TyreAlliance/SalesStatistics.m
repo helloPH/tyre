@@ -10,10 +10,11 @@
 #import "EvaluateCell.h"
 
 @interface SalesStatistics ()<UITableViewDelegate,UITableViewDataSource>
+@property (nonatomic,assign)NSInteger saleCount;
 @property (nonatomic,assign)NSInteger yeIndex;
 @property (nonatomic,strong)NSDate * starttime;
 @property (nonatomic,strong)NSDate * endtime;
-
+@property (nonatomic,assign)BOOL isShou;
 
 @property (nonatomic,strong)NSMutableDictionary * dataDic;
 @property (nonatomic,strong)NSMutableArray * datas;
@@ -79,8 +80,10 @@
             _screenControl.alpha=1;
         }];
     }else{
+       
         btn.selected=NO;
         if (sender.tag==100) {
+             _isShou=NO;
             _yeIndex=1;
             [self reshData];
         }
@@ -97,17 +100,16 @@
 }
 
 -(void)initData{
+    _isShou=YES;
     _dataDic=[NSMutableDictionary dictionary];
     _datas=[NSMutableArray array];
     _yeIndex=1;
     
-    
-    
     NSDateFormatter * fo=[[NSDateFormatter alloc]init];
     [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
     [fo setDateFormat:@"yyyy-MM-dd"];
-    _starttime=[fo dateFromString:@"2000-01-01"];
-    _endtime=[NSDate date];
+    _starttime=[NSDate date];
+    _endtime=[[NSDate date] dateByAddingTimeInterval:24*3600];
     
     
 }
@@ -125,6 +127,11 @@
                         @"endtime":[self stringFromDate:_endtime],
                         @"ye":[NSString stringWithFormat:@"%d",_yeIndex]};
     
+    if (_isShou) {
+        dic=@{@"bid":[Stockpile sharedStockpile].ID,
+              @"ye":[NSString stringWithFormat:@"%d",_yeIndex]};
+    }
+    
     [AnalyzeObject getSalesStatisticsWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
         [self stopAnimating];
         [_tableView.mj_header endRefreshing];
@@ -136,34 +143,42 @@
         [_dataDic addEntriesFromDictionary:model];
         NSArray * datas=_dataDic[@"Product_list"];
         
+        if (_yeIndex==1) {
+            [_datas removeAllObjects];
+            _saleCount=[NSString stringWithFormat:@"%@",_dataDic[@"soldcount"]].integerValue;
+        }else{
+            _saleCount=_saleCount+[NSString stringWithFormat:@"%@",_dataDic[@"soldcount"]].integerValue;
+        }
+        
         if ([ret isEqualToString:@"1"]) {
  
-            if (_yeIndex==1) {
-                [_datas removeAllObjects];
-            }
             [_datas addObjectsFromArray:datas];
             
             if (datas.count==0) {
-                [self showPromptBoxWithSting:@"没有更多数据"];
                 [_tableView.mj_footer endRefreshingWithNoMoreData];
             }else{
-                [self showPromptBoxWithSting:msg];
                 [_tableView.mj_footer endRefreshing];
             }
+//            [self showFailed:NO];
    
         }else{
             [_tableView.mj_footer endRefreshing];
-            [self showPromptBoxWithSting:msg];
+            if (_datas.count==0) {
+//                [self showFailed:YES];
+            }
             
         }
+        [self showBtnEmpty:_datas.count==0?YES:NO];
+
                  [self reshView];
     }];
     
     
 }
 -(void)reshView{
-    _labelAllCount.text=[NSString stringWithFormat:@"%@",_dataDic[@"soldcount"]];
+    _labelAllCount.text=[NSString stringWithFormat:@"%d",_saleCount];
     [_tableView reloadData];
+//    [self showBtnEmpty:_datas.count==0?YES:NO];
 }
 -(void)newView{
     _tableView=[[UITableView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
@@ -210,7 +225,7 @@
     totalSaleCount.textAlignment=NSTextAlignmentRight;
     totalSaleCount.textColor=lightOrangeColor;
     [headView addSubview:totalSaleCount];
-    totalSaleCount.text=[NSString stringWithFormat:@"%d",0];
+//    totalSaleCount.text=[NSString stringWithFormat:@"%d",0];
     _labelAllCount=totalSaleCount;
     return headView;
 }
@@ -229,10 +244,38 @@
 -(UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     EvaluateCell * cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
     NSDictionary * dic=_datas[indexPath.section];
-    [cell.imgView setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",dic[@"P_Logo"]]] placeholderImage:[UIImage imageNamed:@"luntai_tai"]];
-    cell.labelIntro.text=[NSString stringWithFormat:@"名称:%@",dic[@"P_name"]];
-    cell.labelStandard.text=[NSString stringWithFormat:@"规格:%@",dic[@"P_GuiGe"]];
-    cell.labelComCount.text=[NSString stringWithFormat:@"评价数量:%@",dic[@"count"]];
+    [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
+    
+    
+
+    
+    
+    
+    
+    
+    NSMutableAttributedString * text11=[[NSMutableAttributedString alloc]initWithString:@"名称："];
+    NSMutableAttributedString * text12=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dic[@"P_name"]]];
+    [text12 addAttribute:NSForegroundColorAttributeName value:grayTextColor range:NSMakeRange(0, text12.length)];
+    [text11 appendAttributedString:text12];
+    cell.labelIntro.attributedText=text11;
+    
+    
+    
+    
+    NSMutableAttributedString * text21=[[NSMutableAttributedString alloc]initWithString:@"规格："];
+    NSMutableAttributedString * text22=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dic[@"P_GuiGe"]]];
+    [text22 addAttribute:NSForegroundColorAttributeName value:grayTextColor range:NSMakeRange(0, text22.length)];
+    [text21 appendAttributedString:text22];
+    cell.labelStandard.attributedText=text21;
+    
+    
+    NSMutableAttributedString * text31=[[NSMutableAttributedString alloc]initWithString:@"销售数量："];
+    NSMutableAttributedString * text32=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dic[@"count"]]];
+    [text32 addAttribute:NSForegroundColorAttributeName value:grayTextColor range:NSMakeRange(0, text32.length)];
+    [text31 appendAttributedString:text32];
+    cell.labelComCount.attributedText=text31;
+    
+    
     return cell;
 }
 -(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
@@ -247,22 +290,23 @@
     [bgControl addTarget:self action:@selector(screenBtn:) forControlEvents:UIControlEventTouchUpInside];
     
     
-    UIView * timeView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 30*self.scale)];
+    UIView * timeView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 40*self.scale)];
     timeView.backgroundColor=[UIColor whiteColor];
     [bgControl addSubview:timeView];
     
-    UILabel * startLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale, 20*self.scale)];
+    UILabel * startLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale,timeView.height- 15*self.scale)];
+    startLabel.centerY=timeView.height/2;
     startLabel.font=DefaultFont(self.scale);
     startLabel.textColor=blackTextColor;
     [timeView addSubview:startLabel];
     startLabel.text=@"起时间";
-    
     NSDateFormatter * fo=[[NSDateFormatter alloc]init];
     [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
     [fo setDateFormat:@"yyyy-MM-dd"];
     
     
-    UIButton * startBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, 20*self.scale)];
+    UIButton * startBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, startLabel.height)];
+    startBtn.centerY=timeView.height/2;
     startBtn.titleLabel.font=Small10Font(self.scale);
     [startBtn setTitleColor:blackTextColor forState:UIControlStateNormal];
     startBtn.layer.cornerRadius=3;
@@ -278,10 +322,22 @@
     _btnStart=startBtn;
     [startBtn addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
     NSString * start=[fo stringFromDate:_starttime];
-    start = [start stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
-    [startBtn setTitle:start forState:UIControlStateNormal];
+//    start = [start stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
+   
+    NSArray * startTimeArr=[start componentsSeparatedByString:@"-"];
+    NSMutableString * startTimeS=[NSMutableString string];
+    for (int i=0; i<startTimeArr.count; i++) {
+        if (i!=0) {
+            [startTimeS appendString:[NSString stringWithFormat:@"%@/",startTimeArr[i]]];
+        }
+    }
+    [startTimeS appendString:(NSString *)(startTimeArr.firstObject)];
     
-    UIButton * endBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, 20*self.scale)];
+    
+    [startBtn setTitle:startTimeS forState:UIControlStateNormal];
+    
+    UIButton * endBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, startLabel.height)];
+    endBtn.centerY=timeView.height/2;
     endBtn.right=Vwidth-10*self.scale;
     endBtn.titleLabel.font=Small10Font(self.scale);
     [endBtn setTitleColor:blackTextColor forState:UIControlStateNormal];
@@ -300,11 +356,21 @@
     [endBtn addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
     [startBtn addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
     NSString * end=[fo stringFromDate:_endtime];
-    end = [end stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
-    [endBtn setTitle:end forState:UIControlStateNormal];
+//    end = [end stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
+    NSArray * endTimeArr=[end componentsSeparatedByString:@"-"];
+    NSMutableString * endTimeS=[NSMutableString string];
+    for (int i=0; i<endTimeArr.count; i++) {
+        if (i!=0) {
+            [endTimeS appendString:[NSString stringWithFormat:@"%@/",endTimeArr[i]]];
+            
+        }
+    }
+    [endTimeS appendString:(NSString *)(endTimeArr.firstObject)];
+    [endBtn setTitle:endTimeS forState:UIControlStateNormal];
     
     
-    UILabel * endLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale, 20*self.scale)];
+    UILabel * endLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale, startLabel.height)];
+    endLabel.centerY=timeView.height/2;
     endLabel.right=endBtn.left-10*self.scale;
     endLabel.font=DefaultFont(self.scale);
     endLabel.textColor=blackTextColor;
@@ -362,6 +428,13 @@
     [control addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
     
     UIDatePicker * datePicker=[[UIDatePicker alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 150*self.scale)];
+    NSDateFormatter * fo=[[NSDateFormatter alloc]init];
+    [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
+    [fo setDateFormat:@"yyyy-MM-dd"];
+    datePicker.minimumDate=[fo dateFromString:@"1990-01-01"];
+    
+    
+    
     datePicker.backgroundColor=[UIColor whiteColor];
     datePicker.bottom=control.height;
     [control addSubview:datePicker];
@@ -411,6 +484,7 @@
     
     if (!_dateControl) {
         [self newDateControl];
+        [self.view bringSubviewToFront:_dateControl];
         return;
     }
     
@@ -423,6 +497,7 @@
             _datePicker.date=_endtime;
         }
         _dateControl.hidden=NO;
+        [self.view bringSubviewToFront:_dateControl];
         [UIView animateWithDuration:0.3 animations:^{
             _dateControl.alpha=1;
         }];
@@ -445,15 +520,30 @@
         [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
         [fo setDateFormat:@"yyyy-MM-dd"];
         NSString * time=[fo stringFromDate:_datePicker.date];
-        time = [time stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
+        
+        NSArray * timeArr=[time componentsSeparatedByString:@"-"];
+        NSMutableString * timeS=[NSMutableString string];
+        for (int i=0; i<timeArr.count; i++) {
+            if (i!=0) {
+                [timeS appendString:[NSString stringWithFormat:@"%@/",timeArr[i]]];
+            }
+        }
+        [timeS appendString:(NSString *)(timeArr.firstObject)];
+        
+        
+//        time = [time stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
+        
+        
+        
+        
         
         if (_btnStart.selected==YES) {
             _starttime=[fo dateFromString:time];
-            [_btnStart setTitle:time forState:UIControlStateNormal];
+            [_btnStart setTitle:timeS forState:UIControlStateNormal];
         }
         if (_btnEnd.selected==YES) {
             _endtime=[fo dateFromString:time];
-            [_btnEnd setTitle:time forState:UIControlStateNormal];
+            [_btnEnd setTitle:timeS forState:UIControlStateNormal];
         }
 //        [self reshData];
     }

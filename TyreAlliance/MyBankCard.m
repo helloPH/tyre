@@ -8,10 +8,16 @@
 
 #import "MyBankCard.h"
 #import "EditBankCard.h"
-#import "AddBankCard.h"
+//#import "AddBankCard.h"
+#import "EditFinanceAccount.h"
+
+
 
 @interface MyBankCard ()
 @property (nonatomic,strong)NSMutableDictionary * dataDic;
+
+
+
 @end
 
 @implementation MyBankCard
@@ -37,6 +43,7 @@
     [self.navigationController popViewControllerAnimated:YES];
 }
 -(void)initData{
+    _isHave=NO;
     _dataDic=[NSMutableDictionary dictionary];
     
 }
@@ -51,10 +58,12 @@
             }
             [_dataDic addEntriesFromDictionary:model];
             [self newView:YES];
+            _isHave=YES;
         }else{
 //            if ([msg isEqualToString:@"没有绑定银行卡"]) {
                 [self newView:NO];
 //            }
+            _isHave=NO;
         }
     }];
 }
@@ -68,50 +77,56 @@
        
         if (i==0) {
 
-            if (isHave) {//判断有无银行卡
-            cellView.height=60*self.scale;
-                UILabel * labelBankName =[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, 80*self.scale, 20*self.scale)];
-                labelBankName.font=DefaultFont(self.scale);
-                labelBankName.textColor=blackTextColor;
-                [cellView addSubview:labelBankName];
-                labelBankName.text=[NSString stringWithFormat:@"%@",_dataDic[@"bank_name"]];
-                
-                UILabel * labelZhiName=[[UILabel alloc]initWithFrame:CGRectMake(labelBankName.left, labelBankName.bottom, labelBankName.width, labelBankName.height)];
-                labelZhiName.font=Small10Font(self.scale);
-                labelZhiName.textColor=blackTextColor;
-                [cellView addSubview:labelZhiName];
-                labelZhiName.text=[NSString stringWithFormat:@"%@",_dataDic[@"bank_zhi_name"]];
-                
-                UILabel * labelOwer=[[UILabel alloc]initWithFrame:labelBankName.frame];
-                labelOwer.top=labelZhiName.bottom;
-                labelOwer.font=DefaultFont(self.scale);
-                labelOwer.textColor=blackTextColor;
-                [cellView addSubview:labelOwer];
-                labelOwer.text=[NSString stringWithFormat:@"持卡人:%@",_dataDic[@"bank_person"]];
-                [labelOwer sizeToFit];
-                
-                UILabel * labelNum=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, Vwidth-20*self.scale-labelZhiName.width, 20*self.scale)];
-                [cellView addSubview:labelNum];
-                labelNum.font=DefaultFont(self.scale);
-                labelNum.textColor=blackTextColor;
-                labelNum.textAlignment=NSTextAlignmentRight;
-                labelNum.right=Vwidth-10*self.scale;
-                labelNum.centerY=labelZhiName.centerY;
-                labelNum.text=[NSString stringWithFormat:@"%@",_dataDic[@"bank_num"]];
-                
-                cellView.height=labelOwer.bottom+10*self.scale;
-                
-                
-            }else{
-                cellView.height=50*self.scale;
-                cellView.titleLabel.text=@"你还没有绑定银行卡";
-                [cellView.titleLabel sizeToFit];
-            }
+//            if (isHave) {//判断有无银行卡
+//            cellView.height=60*self.scale;
+//                UILabel * labelBankName =[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, 80*self.scale, 20*self.scale)];
+//                labelBankName.font=DefaultFont(self.scale);
+//                labelBankName.textColor=blackTextColor;
+//                [cellView addSubview:labelBankName];
+//                labelBankName.text=[NSString stringWithFormat:@"%@",_dataDic[@"bank_name"]];
+//                
+//                UILabel * labelZhiName=[[UILabel alloc]initWithFrame:CGRectMake(labelBankName.left, labelBankName.bottom, labelBankName.width, labelBankName.height)];
+//                labelZhiName.font=Small10Font(self.scale);
+//                labelZhiName.textColor=blackTextColor;
+//                [cellView addSubview:labelZhiName];
+//                labelZhiName.text=[NSString stringWithFormat:@"%@",_dataDic[@"bank_zhi_name"]];
+//                
+//                UILabel * labelOwer=[[UILabel alloc]initWithFrame:labelBankName.frame];
+//                labelOwer.top=labelZhiName.bottom;
+//                labelOwer.font=DefaultFont(self.scale);
+//                labelOwer.textColor=blackTextColor;
+//                [cellView addSubview:labelOwer];
+//                labelOwer.text=[NSString stringWithFormat:@"持卡人:%@",_dataDic[@"bank_person"]];
+//                [labelOwer sizeToFit];
+//                
+//                UILabel * labelNum=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, Vwidth-20*self.scale-labelZhiName.width, 20*self.scale)];
+//                [cellView addSubview:labelNum];
+//                labelNum.font=DefaultFont(self.scale);
+//                labelNum.textColor=blackTextColor;
+//                labelNum.textAlignment=NSTextAlignmentRight;
+//                labelNum.right=Vwidth-10*self.scale;
+//                labelNum.centerY=labelZhiName.centerY;
+//                labelNum.text=[NSString stringWithFormat:@"%@",_dataDic[@"bank_num"]];
+//                
+//                cellView.height=labelOwer.bottom+10*self.scale;
+//                
+//                
+//            }else{
+//                cellView.height=50*self.scale;
+//                cellView.titleLabel.text=@"你还没有绑定银行卡";
+//                [cellView.titleLabel sizeToFit];
+//            }
 
         }
         
         if (i==1) {
-            cellView.titleLabel.text=@"添加银行卡";
+           
+            if (isHave) {
+                cellView.titleLabel.text=@"编辑银行卡";
+            }else{
+                cellView.titleLabel.text=@"添加银行卡";
+            }
+            cellView.top=self.NavImg.bottom+10*self.scale;
             [cellView.titleLabel sizeToFit];
             [cellView ShowRight:YES];
             [cellView.btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
@@ -131,7 +146,24 @@
     setY=labelTip.bottom+10*self.scale;
 }
 -(void)btnEvent:(UIButton *)sender{
-    [self.navigationController pushViewController:[EditBankCard new] animated:YES];
+    
+    EditBankCard * edit=[EditBankCard new];
+    edit.isHave=_isHave;
+    edit.cardInfo=_dataDic;
+    edit.block=^(BOOL secc){
+        [self.navigationController popViewControllerAnimated:NO];
+        [self.navigationController popViewControllerAnimated:YES];
+        
+        if (_block) {
+            _block(YES);
+        }
+    };
+    edit.cId=[NSString stringWithFormat:@"%@",_dataDic[@"bank_id"]];
+    [self.navigationController pushViewController:edit animated:YES];
+    
+    
+ 
+    
 }
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];

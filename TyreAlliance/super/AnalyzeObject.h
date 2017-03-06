@@ -106,11 +106,20 @@ typedef void(^Blocks)(id model, NSString *ret, NSString *msg);
 /*
  *添加银行卡
  */
+
++(void)addCardWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+
+/*
+ *编辑银行卡
+ */
+
 +(void)updateCardWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
 /*
  *提现
  */
 +(void)WithDrawWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+
+
 
 /*
  *提现记录
@@ -137,15 +146,22 @@ typedef void(^Blocks)(id model, NSString *ret, NSString *msg);
  */
 +(void)get1OrderDetailWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
 
-/*
- *订单详细(待评价，已完成)
- */
-+(void)get2OrderDetailWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+
+
+///*
+// *订单详细(待评价，已完成)
+// */
+//+(void)get2OrderDetailWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
 
 /*
  *确认发货
  */
 +(void)confirmDeliverGoodsWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+/*
+ *物流列表
+ */
++(void)getWuLiuListWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+
 /*
  *销售统计
  */
@@ -179,10 +195,26 @@ typedef void(^Blocks)(id model, NSString *ret, NSString *msg);
 +(void)EVFeedBackWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
 
 #pragma  mark  -- 设置
+
+/*
+ *我的二维码
+ */
++(void)geterCodeWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+
+/*
+ *获取个人信息
+ */
++(void)getPerInfoWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
 /*
  *设置个人信息
  */
 +(void)setPerInfoWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+/*
+ *更新联系人  门头照等
+ */
++(void)upDatePerInfoWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+
+
 /*
  *设置
  */
@@ -191,4 +223,8 @@ typedef void(^Blocks)(id model, NSString *ret, NSString *msg);
  *留言反馈
  */
 +(void)feedBackWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
+/*
+ *修改密码
+ */
++(void)upDatePassWordWithDic:(NSDictionary *)dic WithBlock:(Blocks)block;
 @end

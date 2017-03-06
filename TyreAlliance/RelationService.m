@@ -8,6 +8,7 @@
 
 #import "RelationService.h"
 
+
 @interface RelationService ()
 
 @end
@@ -16,8 +17,10 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+//       _qqString=@"942261721";
     [self newNavi];
     [self newView];
+ 
     
     // Do any additional setup after loading the view.
 }
@@ -34,7 +37,7 @@
     [self.navigationController popViewControllerAnimated:YES];
 }
 -(void)newView{
-    NSArray * titles=@[@{@"title":@"一键拨号",@"content":@"13383824275",@"img":@"red_phone"},@{@"title":@"在线客服",@"content":@"942261721",@"img":@"messgea_yellow"}];
+    NSArray * titles=@[@{@"title":@"一键拨号",@"content":_telString,@"img":@"red_phone"},@{@"title":@"在线客服",@"content":@"",@"img":@"messgea_yellow"}];
     
     for (int i =0; i < titles.count; i ++) {
    
@@ -46,7 +49,8 @@
         
         
         cellView.content=[NSString stringWithFormat:@"%@",[titles[i] valueForKey:@"content"]];
-        
+        cellView.contentLabel.right=cellView.RightImg.left-10*self.scale;
+        cellView.contentLabel.textAlignment=NSTextAlignmentRight;
         cellView.btn.tag=100+i;
         [cellView.btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -57,9 +61,10 @@
 -(void)btnEvent:(UIButton *)sender{
     if (sender.tag==100) {
 //        [self openUrl:@"https://www.baidu.com"];
-        [self makePhoneWithTel:@"13383824275"];
+        [self makePhoneWithTel:_telString];
     }else{
-        
+      [self openUrl:[NSString stringWithFormat:@"mqq://im/chat?chat_type=wpa&uin=%@&version=1&src_type=web",_qqString]];
+//        mqq://im/chat?chat_type=wpa&uin=942261721&version=1&src_type=web
     }
 }
 - (void)didReceiveMemoryWarning {

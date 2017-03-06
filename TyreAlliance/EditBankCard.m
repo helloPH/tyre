@@ -7,10 +7,13 @@
 //
 
 #import "EditBankCard.h"
+#import "IQKeyboardManager.h"
 
-@interface EditBankCard ()<UIPickerViewDelegate,UIPickerViewDataSource>
+@interface EditBankCard ()<UIPickerViewDelegate,UIPickerViewDataSource,UIScrollViewDelegate>
+@property (nonatomic,strong)UIScrollView * scrollView;
 @property (nonatomic,strong)NSMutableArray * bankList;
 @property (nonatomic,assign)NSInteger selectedIndex;
+@property (nonatomic,strong)NSMutableDictionary * dataDic;
 
 
 @property (nonatomic,strong)UIControl * pickControl;
@@ -31,8 +34,10 @@
     [super viewDidLoad];
     [self initData];
     [self newNavi];
-    [self newView];
+//    [self newView];
     [self reshData];
+    
+    
     // Do any additional setup after loading the view.
 }
 -(void)newNavi{
@@ -50,16 +55,62 @@
 -(void)initData{
     _bankList=[NSMutableArray array];
     _selectedIndex=1;
+    _dataDic = [NSMutableDictionary dictionary];
     
 }
 -(void)reshData{
-    
+    [self startAnimating:nil];
+    NSDictionary * dic=@{@"uid":[Stockpile sharedStockpile].ID};
+    [AnalyzeObject getCardWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+        [self stopAnimating];
+        if ([ret isEqualToString:@"1"]) {
+            if (_dataDic) {
+                [_dataDic removeAllObjects];
+            }
+            [_dataDic addEntriesFromDictionary:model];
+           
+//            _isHave=YES;
+        }else{
+            //            if ([msg isEqualToString:@"没有绑定银行卡"]) {
+            
+            //            }
+//            _isHave=NO;
+        }
+        [self newView];
+    }];
+}
+-(void)dismissKey{
+    [[IQKeyboardManager sharedManager]resignFirstResponder];
 }
 -(void)newView{
+    _scrollView=[[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
+    _scrollView.backgroundColor=superBackgroundColor;
+    _scrollView.delegate=self;
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_scrollView addGestureRecognizer:tap];
+    
+    
+    
+    [self.view addSubview:_scrollView];
+    
+    if (_isHave) {
+            self.TitleLabel.text=@"添加银行卡";
+    }else{
+            self.TitleLabel.text=@"添加银行卡";
+    }
     NSArray * titles=@[@{@"title":@"姓名:",@"place":@"请输入您的姓名"},
                        @{@"title":@"卡号:",@"place":@"请输入您的银行卡号"},
                        @{@"title":@"所属银行",@"place":@""},
                        @{@"title":@"开户行:",@"place":@"请输入您的开户行地址"}];
+    
+    if (_isHave) {
+        
+        titles=@[@{@"title":@"姓名:",@"place":[NSString stringWithFormat:@"%@",_dataDic[@"bank_person"]?_dataDic[@"bank_person"]:@""]},
+                 @{@"title":@"卡号:",@"place":[NSString stringWithFormat:@"%@",_dataDic[@"bank_num"]?_dataDic[@"bank_num"]:@""]},
+                 @{@"title":@"所属银行",@"place":[NSString stringWithFormat:@"%@",_dataDic[@"bank_name"]?_dataDic[@"bank_name"]:@""]},
+                 @{@"title":@"开户行:",@"place":[NSString stringWithFormat:@"%@",_dataDic[@"bank_zhi_name"]?_dataDic[@"bank_zhi_name"]:@""]}];
+    }
+    
     CGFloat setY=0;
     for ( int i = 0; i < titles.count; i ++) {
         CellView * cellView=[[CellView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+10*self.scale+i *40*self.scale, Vwidth, 40*self.scale)];
@@ -68,12 +119,18 @@
         cellView.titleLabel.text=[titles[i] valueForKey:@"title"];
         [cellView.titleLabel sizeToFit];
         
-        UITextField * tf=[[UITextField alloc]initWithFrame:CGRectMake(cellView.titleLabel.right+10*self.scale, 0, 150*self.scale, cellView.titleLabel.height)];
+        UITextField * tf=[[UITextField alloc]initWithFrame:CGRectMake(cellView.titleLabel.right+10*self.scale, 0, 200*self.scale, cellView.titleLabel.height)];
         
         tf.centerY=cellView.titleLabel.centerY;
         tf.textColor=blackTextColor;
         tf.font=DefaultFont(self.scale);
-        tf.placeholder=[titles[i] valueForKey:@"place"];
+        
+        if (_isHave) {
+            tf.text=[titles[i] valueForKey:@"place"];
+        }else{
+          tf.placeholder=[titles[i] valueForKey:@"place"];  
+        }
+        
         
         if (i != 2) {
             [cellView addSubview:tf];
@@ -82,11 +139,14 @@
             case 0:
             {
                 _tfName=tf;
+                [_tfName limitText:@10];
             }
                 break;
             case 1:
             {
                 _tfCardNum=tf;
+                [_tfCardNum limitText:@19];
+                _tfCardNum.keyboardType=UIKeyboardTypeNumberPad;
             }
                 break;
             case 2:
@@ -103,6 +163,9 @@
                 label.textColor=blackTextColor;
                 label.textAlignment=NSTextAlignmentRight;
                 [cellView addSubview:label];
+                if (_isHave) {
+                    label.text=[titles[i] valueForKey:@"place"];
+                }
                 _labelBank=label;
                 
                 
@@ -121,6 +184,7 @@
         
         
     }
+    
     
     UIButton * submitBtn=[[UIButton alloc]initWithFrame:CGRectMake(10*self.scale, setY+30*self.scale, Vwidth-20*self.scale, 40*self.scale)];
     submitBtn.tag=1000;
@@ -170,9 +234,10 @@
 }
 
 -(void)controlBtn:(UIButton*)sender{
+    [self dismissKey];
+    
     if (!_pickControl) {
         [self startAnimating:nil];
-        
         NSDictionary * dic;
         [AnalyzeObject getBankListWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
             [self stopAnimating];
@@ -217,27 +282,104 @@
         _labelBank.text=[NSString stringWithFormat:@"%@",[_bankList[_selectedIndex] valueForKey:@"Bank_name"]];
         
     }
-    
-    
 }
 -(void)btnEvent:(UIButton *)sender{
     if (sender.tag!=1000) {//选择所属银行
         [self controlBtn:nil];
     }else{//添加银行卡
-        NSDictionary * dic=@{@"id":[NSString stringWithFormat:@"%@",[Stockpile sharedStockpile].ID],
-                             @"person":[NSString stringWithFormat:@"%@",_tfBankName.text],
-                             @"num":[NSString stringWithFormat:@"%@",_tfCardNum.text],
-                             @"bank":[NSString stringWithFormat:@"%@",_labelBank.text],
-                             @"KaiHuHang":[NSString stringWithFormat:@"%@",_tfBankName.text]};
-        [AnalyzeObject updateCardWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
-            if ([ret isEqualToString:@"1"]) {
-                
-            }else{
-                
-                
-            }
-            [self showPromptBoxWithSting:msg];
-        }];
+        if ([_tfName.text isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入姓名"];
+            return;
+        }
+        if ([_tfCardNum.text isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入卡号"];
+            return;
+        }
+        if (![_tfCardNum.text isValidateBank]) {
+            [self showPromptBoxWithSting:@"请输入正确的银行卡"];
+            return;
+        }
+        if ([_labelBank.text isEmptyString]) {
+            [self showPromptBoxWithSting:@"请选择银行"];
+            return;
+        }
+        if ([_tfBankName.text isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入开户行地址"];
+            return;
+        }
+        
+        
+        if (_isHave) {
+            if ([[NSString stringWithFormat:@"%@",_dataDic[@"bank_person"]] isEqualToString:_tfName.text]
+                &&[[NSString stringWithFormat:@"%@",_dataDic[@"bank_num"]]isEqualToString:_tfCardNum.text]
+                &&[[NSString stringWithFormat:@"%@",_dataDic[@"bank_name"]]isEqualToString:_labelBank.text]
+                &&[[NSString stringWithFormat:@"%@",_dataDic[@"bank_zhi_name"]]isEqualToString:_tfBankName.text])
+                {
+                    [self ShowAlertWithMessage:@"你还未修改任何内容!"];
+                    return;
+                    
+                }
+        }
+        
+        
+        
+        [self startAnimating:nil];
+        
+        NSString * idValue=[_cId Des_EncryptForKey:DesKey Iv:DesValue];
+        NSString * perValue=[_tfName.text Des_EncryptForKey:DesKey Iv:DesValue];
+        NSString * numValue=[_tfCardNum.text Des_EncryptForKey:DesKey Iv:DesValue];
+        NSString * bankValue=[_labelBank.text Des_EncryptForKey:DesKey Iv:DesValue];
+        NSString * kaiValue=[_tfBankName.text Des_EncryptForKey:DesKey Iv:DesValue];
+        
+        
+        
+        if (_isHave) {
+            NSDictionary * dic=@{@"id":[NSString stringWithFormat:@"%@",idValue],
+                                 @"person":[NSString stringWithFormat:@"%@",perValue],
+                                 @"num":[NSString stringWithFormat:@"%@",numValue],
+                                 @"bank":[NSString stringWithFormat:@"%@",bankValue],
+                                 @"KaiHuHang":[NSString stringWithFormat:@"%@",kaiValue]};
+            [AnalyzeObject updateCardWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+                [self stopAnimating];
+                if ([ret isEqualToString:@"1"]) {
+                    [self PopVC:nil];
+                    if (_block) {
+                        _block(YES);
+                    }
+                }else{
+                    
+                    
+                }
+                [self showPromptInWindowWithString:msg];
+            }];
+        }else{
+            idValue=[[Stockpile sharedStockpile].ID Des_EncryptForKey:DesKey Iv:DesValue];
+            
+            NSDictionary * dic=@{@"uid":[NSString stringWithFormat:@"%@",idValue],
+                                 @"person":[NSString stringWithFormat:@"%@",perValue],
+                                 @"num":[NSString stringWithFormat:@"%@",numValue],
+                                 @"bank":[NSString stringWithFormat:@"%@",bankValue],
+                                 @"KaiHuHang":[NSString stringWithFormat:@"%@",kaiValue]};
+            [AnalyzeObject  addCardWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+                [self stopAnimating];
+                if ([ret isEqualToString:@"1"]) {
+                    [self PopVC:nil];
+                    if (_block) {
+                        _block(YES);
+                    }
+                    
+                }else{
+                    
+                    
+                }
+                [self showPromptBoxWithSting:msg];
+            }];
+            
+            
+        }
+        
+        
+
     }
 }
 - (void)didReceiveMemoryWarning {
@@ -256,6 +398,10 @@
 }
 -(void)pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component{
     _selectedIndex=row;
+}
+#pragma  mark -- scrollDelegate
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
 }
 
 /*

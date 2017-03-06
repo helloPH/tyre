@@ -24,36 +24,38 @@
     [self.contentView addSubview:_topLine];
     
     
-    _labelTime = [[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, 60*self.scale, 20*self.scale)];
+    _labelTime = [[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, Vwidth/4, 20*self.scale)];
+    _labelTime.centerX=Vwidth*(1/8.0);
+    _labelTime.textAlignment=NSTextAlignmentCenter;
     [self.contentView addSubview:_labelTime];
-    _labelTime.font=Small10Font(self.scale);
+    _labelTime.font=DefaultFont(self.scale);
     _labelTime.textColor=blackTextColor;
-    _labelTime.text=@"2000-1-1";
+//    _labelTime.text=@"2000-1-1";
     
     _labelOrder=[[UILabel alloc]initWithFrame:_labelTime.frame];
-    _labelOrder.right=Vwidth/2-20*self.scale;
-    _labelOrder.textAlignment=NSTextAlignmentRight;
+    _labelOrder.centerX=Vwidth*(3/8.0);
+    _labelOrder.textAlignment=NSTextAlignmentCenter;
     [self.contentView addSubview:_labelOrder];
-    _labelOrder.font=Small10Font(self.scale);
+    _labelOrder.font=DefaultFont(self.scale);
     _labelOrder.textColor=blackTextColor;
-    _labelOrder.text=@"123456";
+//    _labelOrder.text=@"123456";
     
     
     _labelMoney=[[UILabel alloc]initWithFrame:_labelTime.frame];
-    _labelMoney.left=Vwidth/2+20*self.scale;
-    _labelMoney.textAlignment=NSTextAlignmentLeft;
+    _labelMoney.centerX=Vwidth*(5/8.0);
+    _labelMoney.textAlignment=NSTextAlignmentCenter;
     [self.contentView addSubview:_labelMoney];
-    _labelMoney.font=Small10Font(self.scale);
-    _labelMoney.textColor=blackTextColor;
-    _labelMoney.text=@"￥100";
+    _labelMoney.font=DefaultFont(self.scale);
+    _labelMoney.textColor=lightOrangeColor;
+//    _labelMoney.text=@"￥100";
     
     _labelIncome=[[UILabel alloc]initWithFrame:_labelTime.frame];
-    _labelIncome.centerX=Vwidth-50*self.scale;
+    _labelIncome.centerX=Vwidth*(7/8.0);
     _labelIncome.textAlignment=NSTextAlignmentCenter;
     [self.contentView addSubview:_labelIncome];
-    _labelIncome.font=Small10Font(self.scale);
-    _labelIncome.textColor=blackTextColor;
-    _labelIncome.text=@"￥10";
+    _labelIncome.font=DefaultFont(self.scale);
+    _labelIncome.textColor=lightOrangeColor;
+//    _labelIncome.text=@"￥10";
 }
 /*
 // Only override drawRect: if you perform custom drawing.

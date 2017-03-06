@@ -111,8 +111,10 @@
     
     _labelConsignee.frame=CGRectMake(30*self.scale, _line1.top+ 10*self.scale, Vwidth/2 -10*self.scale, 20*self.scale);
     
-    _labelNumber.frame=CGRectMake(Vwidth/2, _labelConsignee.top*self.scale, Vwidth/2-10*self.scale, 20*self.scale);
+    _labelNumber.frame=CGRectMake(Vwidth/2, _labelConsignee.top, Vwidth/2-10*self.scale, 20*self.scale);
     _labelNumber.right=Vwidth-20*self.scale;
+    
+    
     
     _imgAdd.frame=CGRectMake(10*self.scale, _labelConsignee.bottom+10*self.scale, 20*self.scale, 20*self.scale);
     

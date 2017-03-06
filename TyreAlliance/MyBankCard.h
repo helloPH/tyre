@@ -9,5 +9,6 @@
 #import "SuperViewController.h"
 
 @interface MyBankCard : SuperViewController
-
+@property (nonatomic,assign)BOOL isHave;
+@property (nonatomic,strong)void (^block)(BOOL success);
 @end

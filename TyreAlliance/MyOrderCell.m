@@ -28,6 +28,7 @@
     _imgView.layer.borderColor=blackLineColore.CGColor;
     _imgView.layer.borderWidth=0.5;
     _imgView.image=[UIImage imageNamed:@"luntai"];
+    _imgView.contentMode=UIViewContentModeScaleAspectFit;
     [self.contentView addSubview:_imgView];
     
     _labelIntro=[UILabel new];

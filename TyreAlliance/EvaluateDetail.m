@@ -8,17 +8,19 @@
 
 #import "EvaluateDetail.h"
 #import "EvaluateDetailCell.h"
+#import "ZLPickerBrowserViewController.h"
 
-
-@interface EvaluateDetail ()<UITableViewDelegate,UITableViewDataSource>
+@interface EvaluateDetail ()<UITableViewDelegate,UITableViewDataSource,ZLPickerBrowserViewControllerDelegate,ZLPickerBrowserViewControllerDataSource>
 
 @property (nonatomic,strong)NSMutableDictionary * dataDic;
 @property (nonatomic,strong)NSMutableArray * datas;
 @property (nonatomic,assign)NSInteger yeIndex;
+@property (nonatomic,strong)NSArray * browerImgs;
+
 
 
 @property (nonatomic,strong)UITableView * tableView;
-
+@property (nonatomic,strong)UIImageView * btnEmpty1;
 @property (nonatomic,strong)UIImageView * headImg;
 @property (nonatomic,strong)UIButton * btnLeft;
 @property (nonatomic,strong)UILabel * labelName,  * labelStander, * labelFive, * labelFour,* labelThree,* labelTwo,* labelOne;
@@ -45,7 +47,7 @@
 }
 -(void)newNavi{
     
-    self.TitleLabel.text=@"评价管理详细";
+    self.TitleLabel.text=@"评价管理详情";
     
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
     [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
@@ -76,43 +78,53 @@
         [self stopAnimating];
         [_tableView.mj_header endRefreshing];
         
-        if (_yeIndex==1) {
-            if (_dataDic) {
-                [_dataDic removeAllObjects];
-            }
-            
-            if (_datas) {
-                [_datas removeAllObjects];
-            }
-        }
+        
+
         
         
         if ([ret isEqualToString:@"1"]) {
-     
+            if (_dataDic) {
+                [_dataDic removeAllObjects];
+            }
+            if (_yeIndex==1) {
+                if (_datas) {
+                    [_datas removeAllObjects];
+                }
+                
+                
+                
+            }
+            
+            
             
             [_dataDic addEntriesFromDictionary:model];
             [_datas addObjectsFromArray:_dataDic[@"comlist"]];
+//            if (_yeIndex==1) {
+//                _allMoney=[NSString stringWithFormat:@"%@",_dataDic[@""]]
+//            }else{
+//                
+//            }
             
             
-            
+
             if ([_dataDic[@"comlist"] count]==0) {
                 [_tableView.mj_footer endRefreshingWithNoMoreData];
             }else{
                 [_tableView.mj_footer endRefreshing];
             }
-            
-            [self reshView];
         }else{
             [_tableView.mj_footer endRefreshing];
-            [self showPromptBoxWithSting:msg];
+//            [self showPromptBoxWithSting:msg];
         }
+        [self reshView];
+        [self showBtnEmpty1:_datas.count==0?YES:NO];
 //        [_tableView.mj_footer endRefreshing];
 
     }];
     
 }
 -(void)reshView{
-    [_headImg setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_dataDic[@"logo"]]]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
+    [_headImg setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_dataDic[@"logo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
     _labelName.text=[NSString stringWithFormat:@"名称:%@",_dataDic[@"pmame"]];
     _labelStander.text=[NSString stringWithFormat:@"规格:%@",_dataDic[@"guige"]];
     
@@ -129,7 +141,10 @@
     _labelTwo.text=[NSString stringWithFormat:@"2星 ：%@ 个",_dataDic[@"two"]];
     _labelOne.text=[NSString stringWithFormat:@"1星 ：%@ 个",_dataDic[@"one"]];
     
+    
+//    _tableView.estimatedRowHeight=100;
     [_tableView reloadData];
+    
     
 }
 -(void)newView{
@@ -140,7 +155,8 @@
     [self.view addSubview:_tableView];
     UIView * headView=[self newHeadView];
     _tableView.tableHeaderView=headView;
-    _tableView.estimatedRowHeight=100;
+//    _tableView.estimatedRowHeight=100;
+    _tableView.separatorStyle=UITableViewCellSeparatorStyleNone;
     [_tableView addHeardTarget:self Action:@selector(xiaLa)];
     [_tableView addFooterTarget:self Action:@selector(shangLa)];
     
@@ -167,6 +183,7 @@
     imgView.layer.borderColor=blackLineColore.CGColor;
     imgView.layer.borderWidth=0.5;
     [firstView addSubview:imgView];
+    imgView.contentMode=UIViewContentModeScaleAspectFit;
     imgView.frame=CGRectMake(10*self.scale, 10*self.scale, 70*self.scale, 70*self.scale);
     _headImg=imgView;
     
@@ -259,22 +276,60 @@
     return _datas.count;
 }
 -(UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+    
+    
     EvaluateDetailCell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell"];
+//    for (UIImageView * img in cell.contentView.subviews) {
+//        if (img.tag>=1000) {
+//            if ([img isKindOfClass:[UIImageView class]]) {
+//                [img removeFromSuperview];
+//            }
+//        }
+//    }
+ 
+   
+    
+//    [cell.contentView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     NSDictionary * dic=_datas[indexPath.section];
-    [cell.imgHead setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",dic[@"ulogo"]]] placeholderImage:[UIImage imageNamed:@"hands_to"]];
+    cell.labelContent.text=[NSString stringWithFormat:@"%@",dic[@"comment_content"]];
+    
+    [cell.imgHead setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"ulogo"]]]] placeholderImage:[UIImage imageNamed:@"people_hui"]];
     cell.labelName.text=[NSString stringWithFormat:@"%@",dic[@"uname"]];
     cell.labelTime.text=[NSString stringWithFormat:@"%@",dic[@"Comment_date"]];
     cell.level=[[NSString stringWithFormat:@"%@",dic[@"comment_score"]] integerValue];
-    cell.labelContent.text=[NSString stringWithFormat:@"%@",dic[@"comment_content"]];
-    
+
     
     NSArray * imgs=[dic objectForKey:@"Logos"];
-    BOOL isImage=imgs.count!=0;
-    [cell layoutHeight:isImage];
+//    BOOL isImage=imgs.count!=0;
+//    [cell layoutHeight:isImage];
     cell.imgs=imgs;
-    
+    cell.block=^(NSArray * imgs,NSInteger currentIndex){
+        [self skipToPhotoBrowerImgs:imgs currentIndex:currentIndex];
+    };
  
     return cell;
+    
+}
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+//    return 300;
+     NSDictionary * dic=_datas[indexPath.section];
+    CGSize  size=[self Text:[NSString stringWithFormat:@"%@",dic[@"comment_content"]] Size:CGSizeMake(Vwidth-20*self.scale, 2000) Font:[UIFont systemFontOfSize:13*self.scale]];
+    NSArray * imgs=[dic objectForKey:@"Logos"];
+    CGFloat imgH;
+    if (imgs.count==0) {
+        imgH=0;
+    }else{
+
+        CGFloat spX=20*self.scale;
+        CGFloat spY=10*self.scale;
+        CGFloat btnW=(Vwidth-20*self.scale-2*spX)/3.0;
+        CGFloat btnH=btnW*0.75;
+        imgH=(((imgs.count-1)/3)+1)* (btnH+spY);
+    }
+    
+    
+    return size.height+100*self.scale+imgH;
     
 }
 -(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
@@ -288,6 +343,61 @@
     // Dispose of any resources that can be recreated.
 }
 
+
+
+#pragma  mark -- dandu
+
+-(void)showBtnEmpty1:(BOOL)show{
+    if (show) {
+        if (_btnEmpty1) {
+            
+        }else{
+            _btnEmpty1=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 100*self.scale, 100*self.scale)];
+            _btnEmpty1.image=[UIImage imageNamed:@"noData"];
+            _btnEmpty1.contentMode=UIViewContentModeScaleAspectFit;
+            _btnEmpty1.center=CGPointMake(Vwidth/2, _tableView.tableHeaderView.height+ 100*self.scale);
+            [self.tableView addSubview:_btnEmpty1];
+            UILabel * lable=[[UILabel alloc]initWithFrame:CGRectMake(0, _btnEmpty1.height+2*self.scale, _btnEmpty1.width, 20*self.scale)];
+            lable.textColor=blackTextColor;
+            lable.font=DefaultFont(self.scale);
+            lable.textAlignment=NSTextAlignmentCenter;
+            lable.text=@"暂无数据";
+            [_btnEmpty1 addSubview:lable];
+        }
+        
+    }else{
+        if (_btnEmpty1) {
+            
+            [_btnEmpty1 removeFromSuperview];
+            _btnEmpty1=nil;
+        }
+        
+    }
+    
+}
+#pragma  mark photoBrower
+-(void)skipToPhotoBrowerImgs:(NSArray * )imgs currentIndex:(NSInteger)currentIndex{
+    ZLPickerBrowserViewController * brower=[ZLPickerBrowserViewController new];
+    brower.delegate=self;
+    brower.dataSource=self;
+    brower.currentPage=currentIndex;
+    _browerImgs=imgs;
+    [self.navigationController pushViewController:brower animated:YES];
+}
+-(NSInteger)numberOfPhotosInPickerBrowser:(ZLPickerBrowserViewController *)pickerBrowser{
+    return _browerImgs.count;
+}
+-(ZLPickerBrowserPhoto *)photoBrowser:(ZLPickerBrowserViewController *)pickerBrowser photoAtIndex:(NSUInteger)index{
+    NSString * imgString= [NSString stringWithFormat:@"%@%@",ImgDuanKou,_browerImgs[index]];
+    NSURL * imgUrl=[NSURL URLWithString:imgString];
+    ZLPickerBrowserPhoto * photo=[ZLPickerBrowserPhoto photoAnyImageObjWith:imgUrl];
+    return photo;
+}
+
+//- (void)didReceiveMemoryWarning {
+//    [super didReceiveMemoryWarning];
+//    // Dispose of any resources that can be recreated.
+//}
 /*
 #pragma mark - Navigation
 

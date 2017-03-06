@@ -16,6 +16,9 @@
     return self;
 }
 -(void)newView{
+        self.selectionStyle=UITableViewCellSelectionStyleNone;
+    
+    
     UIView * topLine=[[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 0.5*self.scale)];
     topLine.backgroundColor=blackLineColore;
     [self.contentView addSubview:topLine];
@@ -24,17 +27,17 @@
     _labelName.font=DefaultFont(self.scale);
     _labelName.textColor=blackTextColor;
     [self.contentView addSubview:_labelName];
-    _labelName.text=@"王麻子";
-    [_labelName sizeToFit];
+//    _labelName.text=@"王麻子";
+//    [_labelName sizeToFit];
     
     
     _labelPhone=[[UILabel alloc]initWithFrame:_labelName.frame];
     _labelPhone.left=_labelName.right+10*self.scale;
     _labelPhone.font=DefaultFont(self.scale);
-    _labelPhone.textColor=blackTextColor;
-//    [self.contentView addSubview:_labelPhone];
-    _labelPhone.text=@"13383824275";
-    [_labelPhone sizeToFit];
+    _labelPhone.textColor=grayTextColor;
+    [self.contentView addSubview:_labelPhone];
+//    _labelPhone.text=@"13383824275";
+//    [_labelPhone sizeToFit];
     
     
     
@@ -44,7 +47,7 @@
     _recomCount.font=DefaultFont(self.scale);
     _recomCount.textColor=blackTextColor;
     [self.contentView addSubview:_recomCount];
-    _recomCount.text=@"3";
+//    _recomCount.text=@"3";
 //    [_recomCount sizeToFit];
 }
 /*

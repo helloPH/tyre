@@ -51,7 +51,7 @@
 }
 -(void)reshData{
     [self startAnimating:nil];
-    if (_datas) {
+    if (_yeIndex==1) {
         [_datas removeAllObjects];
     }
     
@@ -60,39 +60,58 @@
                              @"ye":[NSString stringWithFormat:@"%d",_yeIndex]};
         [AnalyzeObject getPushMessageWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
             [self stopAnimating];
-            [_tableView.mj_footer endRefreshing];
             [_tableView.mj_header endRefreshing];
             
             if ([ret isEqualToString:@"1"]) {
                 [_datas addObjectsFromArray:model];
-             
+                if ([model count]==0) {
+                    [_tableView.mj_footer endRefreshingWithNoMoreData];
+                }else{
+                    [_tableView.mj_footer endRefreshing];
+                }
+//                [self showFailed:NO];
             }else{
-                
-                [self showPromptBoxWithSting:msg];
+//                [self showFailed:YES];
+                [_tableView.mj_footer endRefreshing];
   
             }
-               [_tableView reloadData];
+                [self showBtnEmpty:_datas.count==0?YES:NO];
+               [self reshView];
         }];
     }else{//售后反馈
         NSDictionary * dic=@{@"uid":[Stockpile sharedStockpile].ID,
                              @"ye":[NSString stringWithFormat:@"%d",_yeIndex]};
         [AnalyzeObject getFeedBackWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
             [self stopAnimating];
-            [_tableView.mj_footer endRefreshing];
             [_tableView.mj_header endRefreshing];
             
             if ([ret isEqualToString:@"1"]) {
                 [_datas addObjectsFromArray:model];
-//                [_tableView reloadData];
+                if ([model count]==0) {
+                    [_tableView.mj_footer endRefreshingWithNoMoreData];
+                }else{
+                    [_tableView.mj_footer endRefreshing];
+                }
+//                [self showFailed:NO];
             }else{
-                [self showPromptBoxWithSting:msg];
-                
+                [_tableView.mj_footer endRefreshing];
+                if (_datas.count==0) {
+//                    [self showFailed:YES];
+                }
             }
-              [_tableView reloadData];
+            [self showBtnEmpty:_datas.count==0?YES:NO];
+              [self reshView];
         }];
     }
     
     
+}
+-(void)reshView{
+    [_tableView reloadData];
+//    [self showBtnEmpty:_datas.count==0?YES:NO];
+//    if (self.btnEmpty) {
+//        self.btnEmpty.centerY=Vheight/2+(self.NavImg.height+80*self.scale)/2;
+//    }
 }
 -(void)newView{
     UIView * selectedView = [[UIView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, 80*self.scale)];
@@ -145,10 +164,21 @@
     [_tableView registerClass:[MessageCenterNotiCell class] forCellReuseIdentifier:@"cell1"];
     [_tableView registerClass:[MessageCenterFeedBackCell class] forCellReuseIdentifier:@"cell2"];
     
+    [_tableView addHeardTarget:self Action:@selector(xiala)];
+    [_tableView addFooterTarget:self Action:@selector(shangla)];
     
+}
+-(void)xiala{
+    _yeIndex=1;
+    [self reshData];
+}
+-(void)shangla{
+    _yeIndex++;
+    [self reshData];
 }
 -(void)selectBtn:(UIButton*)sender{
     _messageType=sender.tag-100;
+    _yeIndex=1;
     [self reshData];
     
     
@@ -181,8 +211,9 @@
 }
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
         NSDictionary * dic=_datas[indexPath.row];
+     MessageCenterNotiCell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell1"];
     if (_messageType==MessageTypeNoti) {
-        MessageCenterNotiCell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell1"];
+//        MessageCenterNotiCell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell1"];
     
 //        cell.labelTime.text=[NSString stringWithFormat:@"%@",dic[@"push_date"]];
         cell.labelContent.text=[NSString stringWithFormat:@"%@  %@",dic[@"push_date"],dic[@"push_title"]];
@@ -191,10 +222,10 @@
         
         return  cell;
     }else{
-        MessageCenterFeedBackCell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell2"];
+//        MessageCenterFeedBackCell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell2"];
 //        cell.labelTime.text=[NSString stringWithFormat:@"%@",dic[@"date"]];
 //        [cell.labelTime sizeToFit];
-        cell.labelTitle.text=[NSString stringWithFormat:@"%@ %@",dic[@"date"],dic[@"reson"]];
+        cell.labelContent.text=[NSString stringWithFormat:@"%@ %@",dic[@"date"],dic[@"reson"]];
         
         return cell;
     }
@@ -203,10 +234,10 @@
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     if (_messageType==MessageTypeNoti) {
         MessageDeatail * messageDetail=[MessageDeatail new];
+        NSDictionary * dic=_datas[indexPath.row];
+        messageDetail.infoDic=dic;
         [self.navigationController pushViewController:messageDetail animated:YES];
-        
-        
-        
+
     }else{
         NSDictionary * dic=_datas[indexPath.row];
         FeedBackDeatil  * feedBack=[FeedBackDeatil new];

@@ -37,11 +37,13 @@
     _imgView.layer.borderColor=blackLineColore.CGColor;
     _imgView.layer.borderWidth=0.5;
     _imgView.image=[UIImage imageNamed:@"luntai_tai"];
+    _imgView.contentMode=UIViewContentModeScaleAspectFit;
+
     [self.contentView addSubview:_imgView];
     
     _labelIntro=[UILabel new];
     _labelIntro.numberOfLines=1;
-    _labelIntro.font=SmallFont(self.scale);
+    _labelIntro.font=DefaultFont(self.scale);
     _labelIntro.textColor=blackTextColor;
     [self.contentView addSubview:_labelIntro];
     
@@ -49,14 +51,14 @@
     _labelStandard=[UILabel new];
     _labelStandard.numberOfLines=1;
     _labelStandard.textColor=blackTextColor;
-    _labelStandard.font=SmallFont(self.scale);
+    _labelStandard.font=DefaultFont(self.scale);
     [self.contentView addSubview:_labelStandard];
 
     
     
     _labelComCount=[UILabel new];
     _labelComCount.numberOfLines=1;
-    _labelComCount.font=SmallFont(self.scale);
+    _labelComCount.font=DefaultFont(self.scale);
     _labelComCount.textColor=blackTextColor;
     [self.contentView addSubview:_labelComCount];
     _labelComCount.bottom=_imgView.bottom;

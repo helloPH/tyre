@@ -26,7 +26,12 @@
 
 
 
-@interface GetLocationFromBMap ()<BMKLocationServiceDelegate,BMKMapViewDelegate,BMKGeoCodeSearchDelegate,UIPickerViewDelegate,UIPickerViewDataSource>
+
+
+@interface GetLocationFromBMap ()<BMKLocationServiceDelegate,BMKMapViewDelegate,BMKGeoCodeSearchDelegate,UIPickerViewDelegate,UIPickerViewDataSource,UITextFieldDelegate>
+@property (nonatomic,strong)UIView * searchBgView;
+
+
 @property (nonatomic,strong)BMKMapView * mapView;
 
 @property (nonatomic,strong)BMKLocationService * locationService;
@@ -62,11 +67,18 @@
     [self newNavi];
     [self newView];
     [self newPickControl];
+    
+    
+ 
     // Do any additional setup after loading the view.
 }
 
 -(void)newNavi{
     self.TitleLabel.text=@"店铺地址";
+    if (_isGet) {
+        self.TitleLabel.text=@"商家地图位置";
+    }
+    
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
     [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
     [popBtn setImage:[UIImage imageNamed:@"left_b"] forState:UIControlStateHighlighted];
@@ -83,18 +95,29 @@
     [submitBtn addTarget:self action:@selector(PopVC:) forControlEvents:UIControlEventTouchUpInside];
     [self.NavImg addSubview:submitBtn];
     submitBtn.tag=101;
+    submitBtn.hidden=_isGet;
     
     
 }
 -(void)PopVC:(UIButton *)sender{
     [self.navigationController popViewControllerAnimated:YES];
     if (sender.tag==101) {
+        if ([((NSString*)(_geoDic[@"address"])) isEmptyString]) {
+            [self ShowAlertWithMessage:@"请选择地址"];
+            return;
+        };
+        
+        
         if (_callBack) {
             _callBack(_geoDic);
         }
     }
 }
+-(void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
 
+    
+}
 -(void)initData{
     _geoDatas=[NSMutableArray array];
     _currentRow=0;
@@ -107,13 +130,43 @@
     
     
     _mapView=[[BMKMapView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
-//    [_mapView showsUserLocation];
+    [_mapView showsUserLocation];
     _mapView.delegate=self;
+    _mapView.zoomLevel=18;
     [self.view addSubview:_mapView];
+    if (_isGet) {
+        _mapView.scrollEnabled=NO;
+    }else{
+        _mapView.scrollEnabled=YES;
+    }
+    
+    
+    _searchBgView=[[UIView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, 40*self.scale)];
+    [self.view addSubview:_searchBgView];
+    _searchBgView.backgroundColor=[UIColor whiteColor];
+    
+    UITextField * tfSearch=[[UITextField alloc]initWithFrame:CGRectMake(0, 0, _searchBgView.width-30*self.scale , _searchBgView.height-10*self.scale)];
+    tfSearch.borderStyle=UITextBorderStyleRoundedRect;
+    tfSearch.returnKeyType=UIReturnKeySearch;
+    tfSearch.placeholder=@"请在此输入要查找的位置";
+    tfSearch.font=DefaultFont(self.scale);
+    tfSearch.delegate=self;
+    [_searchBgView addSubview:tfSearch];
+    tfSearch.center=CGPointMake(_searchBgView.width/2, _searchBgView.height/2);
+    if (_isGet) {
+        _searchBgView.hidden=YES;
+    }else{
+        _searchBgView.hidden=NO;
+    }
+    
+    
+    
+    
     
     UIView * geoView=[[UIView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, 30*self.scale)];
     geoView.backgroundColor=[UIColor whiteColor];
     [self.view addSubview:geoView];
+    geoView.hidden=YES;
     
     NSArray * btnTitles=@[@"请选择省份",@"请选择市",@"请选择县"];
     NSInteger column=3;
@@ -149,11 +202,11 @@
     }
     
     
-    UIImageView * imgView=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 30*self.scale, 30*self.scale)];
+    UIImageView * imgView=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 25*self.scale, 25*self.scale)];
     [self.view addSubview:imgView];
     imgView.contentMode=UIViewContentModeCenter;
     imgView.image=[UIImage imageNamed:@"map_red"];
-    imgView.center=self.view.center;
+    imgView.center=CGPointMake(Vwidth/2, (Vheight-self.NavImg.height)/2+self.NavImg.height-imgView.height/2);
     _imgView=imgView;
     
     UILabel * labelTitle=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, 0, 20*self.scale)];
@@ -162,18 +215,42 @@
     labelTitle.textColor=blackTextColor;
 
     labelTitle.numberOfLines=0;
+    labelTitle.font=DefaultFont(self.scale);
     labelTitle.layer.cornerRadius=5*self.scale;
     labelTitle.layer.masksToBounds=YES;
     labelTitle.textAlignment=NSTextAlignmentCenter;
     labelTitle.backgroundColor=[UIColor colorWithRed:1 green:1 blue:1 alpha:0.8];
     _labelTitle=labelTitle;
     
+    _labelTitle.numberOfLines=1;
+    _labelTitle.backgroundColor=[UIColor whiteColor];
+    _labelTitle.width=Vwidth;
+    _labelTitle.height=40*self.scale;
+    _labelTitle.bottom=Vheight;
     
+    if (_isGet) {
+        _labelTitle.hidden=YES;
+    }else{
+        _labelTitle.hidden=NO;
+    }
     
     
     
     _searcher=[[BMKGeoCodeSearch alloc]init];
     _searcher.delegate=self;
+    if (_isGet && _addreString) {
+        BMKGeoCodeSearchOption * geoOption=[[BMKGeoCodeSearchOption alloc]init];
+        
+        geoOption.address=[[NSString stringWithFormat:@"%@",self.addreString] isEmptyString]?@"":[NSString stringWithFormat:@"%@",self.addreString];
+        if (![_searcher geoCode:geoOption]) {
+            [self showPromptBoxWithSting:@"获取地址失败"];
+        };
+    }
+
+  
+    
+    
+    
     
     //配置定位服务
     self.locationService=[[BMKLocationService alloc]init];
@@ -186,12 +263,18 @@
     //定位的触发条件
     self.locationService.distanceFilter=10.f;
     
-    //开始定位
-    if ([CLLocationManager locationServicesEnabled]) {
-        [self.locationService startUserLocationService];
-    }else{
-        NSLog(@"不能进行定位");
+    if (!_isGet) {
+        //开始定位
+        if ([CLLocationManager locationServicesEnabled]) {
+            [self.locationService startUserLocationService];
+        }else{
+            NSLog(@"不能进行定位");
+        }
     }
+    
+    
+    
+ 
     
 }
 - (void)didReceiveMemoryWarning {
@@ -340,10 +423,7 @@
 }
 
 -(void)geoSelectBtn:(UIButton *)sender{
-    
-    
-    
-    
+
     if (_pickControl.hidden) {//隐藏状态下 能点击的只有 上方按钮
         for (UIButton * btn in sender.superview.subviews) {
             if ([btn isKindOfClass:[UIButton class]]) {
@@ -439,8 +519,6 @@
     _mapView.centerCoordinate=userLocation.location.coordinate;
 
 }
-
-
 #pragma  mark -- map view  delegate
 -(void)mapView:(BMKMapView *)mapView regionDidChangeAnimated:(BOOL)animated{
     BMKReverseGeoCodeOption * option=[[BMKReverseGeoCodeOption alloc]init];
@@ -451,30 +529,38 @@
 #pragma  mark -- geo delegate
 -(void)onGetGeoCodeResult:(BMKGeoCodeSearch *)searcher result:(BMKGeoCodeResult *)result errorCode:(BMKSearchErrorCode)error{
     _mapView.centerCoordinate=result.location;
-    
-    
+
 }
 -(void)onGetReverseGeoCodeResult:(BMKGeoCodeSearch *)searcher result:(BMKReverseGeoCodeResult *)result errorCode:(BMKSearchErrorCode)error{
     _labelTitle.text=result.address;
     
-    _labelTitle.size=[self Text:_labelTitle.text Size:CGSizeMake(Vwidth/2, 2000) Font:DefaultFont(self.scale)];
-    _labelTitle.height=_labelTitle.height+10*self.scale;
-    _labelTitle.width=_labelTitle.width+10*self.scale;
-    _labelTitle.bottom=_imgView.top-5*self.scale;
-    _labelTitle.centerX=_imgView.centerX;
+//    _labelTitle.size=[self Text:_labelTitle.text Size:CGSizeMake(Vwidth/2, 2000) Font:DefaultFont(self.scale)];
+//    _labelTitle.height=_labelTitle.height+10*self.scale;
+//    _labelTitle.width=_labelTitle.width+10*self.scale;
+//    _labelTitle.bottom=_imgView.top-5*self.scale;
+//    _labelTitle.centerX=_imgView.centerX;
     if (!_geoDic){
         _geoDic=[NSMutableDictionary dictionary];
     }
-//    [_btnSheng setTitle:result.addressDetail.province forState:UIControlStateNormal];
-//    [_btnCity setTitle:result.addressDetail.city forState:UIControlStateNormal];
-//    [_btnCounty setTitle:result.addressDetail.district forState:UIControlStateNormal];
     
     [_geoDic setValue:[NSString stringWithFormat:@"%f",result.location.latitude] forKey:@"Lat"];
     [_geoDic setValue:[NSString stringWithFormat:@"%f",result.location.longitude] forKey:@"Lng"];
     [_geoDic setValue:[NSString stringWithFormat:@"%@",result.address] forKey:@"address"];
-    [_geoDic setValue:[NSString stringWithFormat:@"%@",result.addressDetail.city] forKey:@"city"];
-    [_geoDic setValue:[NSString stringWithFormat:@"%@",result.addressDetail.province] forKey:@"sheng"];
-    [_geoDic setValue:[NSString stringWithFormat:@"%@",result.addressDetail.district] forKey:@"xian"];
+//    [_geoDic setValue:[NSString stringWithFormat:@"%@",result.addressDetail.city] forKey:@"city"];
+//    [_geoDic setValue:[NSString stringWithFormat:@"%@",result.addressDetail.province] forKey:@"sheng"];
+//    [_geoDic setValue:[NSString stringWithFormat:@"%@",result.addressDetail.district] forKey:@"xian"];
+}
+
+#pragma  mark -- textField delegate
+-(BOOL)textFieldShouldReturn:(UITextField *)textField{
+    BMKGeoCodeSearchOption * geoOption=[[BMKGeoCodeSearchOption alloc]init];
+    geoOption.address=[[NSString stringWithFormat:@"%@",textField.text] isEmptyString]?@"":[NSString stringWithFormat:@"%@",textField.text];
+    if (![_searcher geoCode:geoOption]) {
+        [self showPromptBoxWithSting:@"获取地址失败"];
+    };
+    
+    [self dismissKey];
+    return YES;
 }
 
 /*

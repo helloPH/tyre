@@ -11,4 +11,6 @@
 @interface EditOrder : SuperViewController
 @property (nonatomic,strong)NSDictionary * dataDic;
 @property (nonatomic,strong)NSArray * datas;
+
+@property (nonatomic,strong)void (^block)(BOOL isSuccess);
 @end

@@ -9,5 +9,6 @@
 #import "SuperViewController.h"
 
 @interface RelationService : SuperViewController
-
+@property (nonatomic,strong)NSString * telString;
+@property (nonatomic,strong)NSString * qqString;
 @end

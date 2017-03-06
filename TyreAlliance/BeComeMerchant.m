@@ -12,8 +12,11 @@
 #import "ZLPickerBrowserViewController.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "ZLPickerBrowserPhoto.h"
+#import "GeoViewController.h"
+#import "IQKeyboardManager.h"
 
-@interface BeComeMerchant ()<UIActionSheetDelegate,UINavigationControllerDelegate,UIImagePickerControllerDelegate>
+
+@interface BeComeMerchant ()<UIActionSheetDelegate,UINavigationControllerDelegate,UIImagePickerControllerDelegate,UIScrollViewDelegate,UITextFieldDelegate>
 @property (nonatomic,strong)UIScrollView * scrollView;
 @property (nonatomic,strong)UIImageView * currentImgView;
 @property (nonatomic,strong)NSMutableArray * imgsMentou;
@@ -25,14 +28,24 @@
 @property (nonatomic,strong)UITextField * tfBussname;
 @property (nonatomic,strong)UIImageView * imgSfzz;
 @property (nonatomic,strong)UIImageView * imgSfzf;
+@property (nonatomic,strong)UIImageView * imgYyzz;
+@property (nonatomic,strong)UIImageView * imgZzzs;
+
+
 @property (nonatomic,strong)UITextField * tfYyzz;
 @property (nonatomic,strong)UITextField * tfZzzs;
 @property (nonatomic,strong)UIView * doorView;
 //@property (nonatomic,strong)UIImageView * imgMentou1;
+
+@property (nonatomic,strong)UILabel * labelGeo1;
 @property (nonatomic,strong)UILabel  * labelGeo;
 
 @property (nonatomic,strong)NSMutableDictionary  * GeoDic;
 
+@property (nonatomic,assign)BOOL isZheng;
+@property (nonatomic,assign)BOOL isFan;
+@property (nonatomic,assign)BOOL isyyzz;
+@property (nonatomic,assign)BOOL iszzzs;
 @end
 
 @implementation BeComeMerchant
@@ -42,12 +55,27 @@
     [self initData];
     [self newNavi];
     [self newView];
+//    _isRefuse=NO;
     if (_isRefuse) {
-    [self reshData];
+        [self ShowAlertTitle:@"被拒绝成为商家" Message:[NSString  stringWithFormat:@"拒绝原因：%@\n\n是否再次申请？",_reson] Delegate:self Block:^(NSInteger index) {
+            if (index==1) {
+                [self reshData];
+            }else{
+                [self.navigationController popViewControllerAnimated:YES];
+                
+            }
+        }];
+    
+ 
     }
     // Do any additional setup after loading the view.
 }
 -(void)initData{
+    
+    _isZheng=NO;
+    _isFan=NO;
+    _isyyzz=NO;
+    _iszzzs=NO;
     _infoDic=[NSMutableDictionary dictionary];
     _imgsMentou=[NSMutableArray array];
    _tfPerson=[UITextField new];
@@ -59,12 +87,12 @@
    _tfZzzs=[UITextField new];
 //   _imgMentou1=[UIImageView new];
    _labelGeo=[UILabel new];
-    _GeoDic=[NSMutableDictionary dictionaryWithDictionary:@{@"sheng":@"1",
-                                                            @"city":@"1",
-                                                            @"xian":@"1",
-                                                            @"address":@"1",
-                                                            @"Lng":@"1",
-                                                            @"Lat":@"1"}];
+    _GeoDic=[NSMutableDictionary dictionaryWithDictionary:@{@"sheng":@"",
+                                                            @"city":@"",
+                                                            @"xian":@"",
+                                                            @"address":@"",
+                                                            @"Lng":@"",
+                                                            @"Lat":@""}];
     
 }
 -(void)newNavi{
@@ -80,8 +108,11 @@
     [self.navigationController popViewControllerAnimated:YES];
 }
 -(void)reshData{
+    [self startAnimating:nil];
+    
     NSDictionary * dic=@{@"uid":[Stockpile sharedStockpile].ID};
     [AnalyzeObject kaiDianInfoWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+        [self stopAnimating];
         if ([ret isEqualToString:@"1"]) {
             [_infoDic addEntriesFromDictionary:model];
             
@@ -94,9 +125,9 @@
             if (_imgsMentou) {
                 [_imgsMentou removeAllObjects];
             }
-            [_imgsMentou addObject:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_infoDic[@"mentou1"]]]];
-            [_imgsMentou addObject:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_infoDic[@"mentou2"]]]];
-            [_imgsMentou addObject:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_infoDic[@"mentou3"]]]];
+//            [_imgsMentou addObject:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_infoDic[@"mentou1"]]]];
+//            [_imgsMentou addObject:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_infoDic[@"mentou2"]]]];
+//            [_imgsMentou addObject:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",_infoDic[@"mentou3"]]]];
         [self reshView];
         }else{
             
@@ -114,12 +145,20 @@
     
     [self reshImgMentView];
 }
+-(void)dismissKey{
+    [[IQKeyboardManager sharedManager]resignFirstResponder];
+}
 -(void)newView{
     _scrollView=[[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
     [self.view addSubview:_scrollView];
-    NSArray * titles1=@[@{@"title":@"联系人",@"place":@"此处一经注册不能修改"},
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_scrollView addGestureRecognizer:tap];
+    _scrollView.delegate=self;
+    
+    NSArray * titles1=@[@{@"title":@"店铺名称",@"place":@"请输入您的店铺名称"},
+                        @{@"title":@"联系人",@"place":@"此处一经注册不能修改"},
                        @{@"title":@"电话",@"place":@"请输入您的电话号码"},
-                       @{@"title":@"店铺名称",@"place":@"请输入您的店铺名称"}];
+                       ];
 //        NSArray * tfs1=@[_tfPerson,_tfTel,_tfBussname];
     CGFloat setY=0;
     for (int i =0 ; i < titles1.count; i ++) {
@@ -141,19 +180,27 @@
         tf.textColor=blackTextColor;
         tf.placeholder=[titles1[i]valueForKey:@"place"];
         tf.centerY=labelTitle.centerY;
+        tf.delegate=self;
+        tf.tag=100+i;
         setY=cellView.bottom;
 //        tf.backgroundColor=grayTextColor;
         //上传为属性
         switch (i) {
-            case 0://联系人
-                _tfPerson=tf;
+            case 0:
+                _tfBussname=tf;
+                [_tfBussname limitText:@15];
                 break;
-            case 1:
-                _tfTel=tf;
+            case 1://联系人
+                _tfPerson=tf;
+                [_tfPerson limitText:@10];
                 break;
             case 2:
-                _tfBussname=tf;
+                _tfTel=tf;
+                [_tfTel limitText:@11];
+                _tfTel.keyboardType=UIKeyboardTypePhonePad;
+            
                 break;
+    
             default:
                 break;
         }
@@ -206,13 +253,18 @@
                 label.text=@"正面";
 //                _imgSfzz=imgView;
             }else{
+                imgView.image=[UIImage imageNamed:@"shenfen_fan"];
                 label.text=@"反面";
 //                _imgSfzf=imgView;
             }
             
         }else{
+            imgView.tag=1000+i;
+            
              imgView.image=[UIImage imageNamed:@"beijing_tu"];
+            imgView.layer.masksToBounds=YES;
             imgView.userInteractionEnabled=YES;
+            imgView.contentMode=UIViewContentModeScaleAspectFill;
             //选择照片的手势
             UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(choosePhoto:)];
             [imgView addGestureRecognizer:tap];
@@ -221,9 +273,13 @@
             if (i==2) {
 //                imgView.image=[UIImage imageNamed:@"shenfen_zheng"];
 //                label.text=@"正面";
+                _isZheng=NO;
                 _imgSfzz=imgView;
+                
             }else{
 //                label.text=@"反面";
+                
+                _isFan=NO;
                 _imgSfzf=imgView;
             }
             
@@ -237,7 +293,7 @@
     labelTip.centerY=eY-idH/2;
     labelTip.font=Small10Font(self.scale);
     labelTip.textColor=blackTextColor;
-    labelTip.text=@"点击上传身份证";
+    labelTip.text=@"点击上传身份证(正反面必传)";
     [identityCard addSubview:labelTip];
     identityCard.height=eY+10*self.scale;
 
@@ -245,14 +301,14 @@
     
     
     
-    NSArray * titles2=@[@{@"title":@"营业执照(实体必填)",@"place":@"请输入您的营业执照编码"},
-                        @{@"title":@"资质证书",@"place":@"请输入您的电资质证书编码"}];
+    NSArray * titles2=@[@{@"title":@"营业执照(必传)",@"place":@"点击上传营业执照"},
+                        @{@"title":@"资质证书(必传)",@"place":@"点击上传资质证书"}];
     CGFloat setYY=setY;
     
     
 
     for (int i =0 ; i < titles2.count; i ++) {
-        CellView * cellView = [[CellView alloc]initWithFrame:CGRectMake(0,setYY+ 10*self.scale+i * 40*self.scale, Vwidth, 40*self.scale)];
+        CellView * cellView = [[CellView alloc]initWithFrame:CGRectMake(0,setYY+ 10*self.scale+i * 80*self.scale, Vwidth, 80*self.scale)];
         [_scrollView addSubview:cellView];
         
         UILabel * labelTitle=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, 50*self.scale, 20*self.scale)];
@@ -269,14 +325,45 @@
         tf.textColor=blackTextColor;
         tf.placeholder=[titles2[i]valueForKey:@"place"];
         setY=cellView.bottom;
+        tf.delegate=self;
+        tf.tag=1000+i;
+        [tf limitText:@19];
+        tf.keyboardType=UIKeyboardTypeAlphabet;
+        tf.hidden=YES;
+        
+        UIImageView * imgView=[[UIImageView alloc]initWithFrame:CGRectMake(60*self.scale, labelTitle.bottom+10*self.scale, idW, idH)];
+        [cellView addSubview:imgView];
+        imgView.contentMode=UIViewContentModeScaleAspectFill;
+        imgView.layer.masksToBounds=YES;
+        imgView.tag=1050+i;
+        imgView.image=[UIImage imageNamed:@"beijing_tu"];
+        imgView.userInteractionEnabled=YES;
+        UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(choosePhoto:)];
+        [imgView addGestureRecognizer:tap];
+        
+        
+     
+        UILabel * zhaoTip=[[UILabel alloc]initWithFrame:CGRectMake(imgView.right+10*self.scale, 0, 80*self.scale, 20*self.scale)];
+        [cellView addSubview:zhaoTip];
+        zhaoTip.centerY=imgView.centerY;
+        zhaoTip.font=Small10Font(self.scale);
+        zhaoTip.textColor=blackTextColor;
+        zhaoTip.text=[titles2[i]valueForKey:@"place"];
+        [zhaoTip sizeToFit];
+        
+        
+        
+        
         
         //上传为属性
         switch (i) {
             case 0://联系人
                 _tfYyzz=tf;
+                _imgYyzz=imgView;
                 break;
             case 1:
                 _tfZzzs=tf;
+                _imgZzzs=imgView;
                 break;
             default:
                 break;
@@ -292,7 +379,7 @@
     [_scrollView addSubview:doorTitle];
     doorTitle.font=DefaultFont(self.scale);
     doorTitle.textColor=blackTextColor;
-    doorTitle.text=@"店铺门头合影";
+    doorTitle.text=@"店铺门头";
     
     [self reshImgMentView];
     
@@ -304,12 +391,32 @@
     //
 
     
+    CellView * geoCell=[[CellView alloc]initWithFrame:CGRectMake(0, setY, Vwidth, 40*self.scale)];
+    [_scrollView addSubview:geoCell];
+    geoCell.titleLabel.text=@"店铺地址";
+    [geoCell ShowRight:YES];
+    geoCell.topline.hidden=NO;
+    [geoCell.btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
+    geoCell.btn.tag=1001;
+    setY=geoCell.bottom;
+    UILabel * labelA1=[[UILabel alloc]initWithFrame:CGRectMake(geoCell.titleLabel.right+10*self.scale, 10*self.scale, 200, 15*self.scale)];
+    labelA1.font=DefaultFont(self.scale);
+    labelA1.textColor=grayTextColor;
+    labelA1.text=@"请选择省市区";
+    labelA1.textAlignment=NSTextAlignmentRight;
+    labelA1.right=geoCell.RightImg.left-10*self.scale;
+    labelA1.centerY=geoCell.titleLabel.centerY;
+    [geoCell addSubview:labelA1];
+    _labelGeo1=labelA1;
+    
+    
     
     
     
     CellView * adressCell=[[CellView alloc]initWithFrame:CGRectMake(0, setY, Vwidth, 40*self.scale)];
     [_scrollView addSubview:adressCell];
-    adressCell.titleLabel.text=@"店铺地址";
+    adressCell.titleLabel.text=@"地图选取位置";
+    adressCell.titleLabel.width=100;
     [adressCell ShowRight:YES];
     adressCell.topline.hidden=NO;
     [adressCell.btn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
@@ -334,7 +441,7 @@
     registBtn.layer.cornerRadius=4;
     registBtn.layer.masksToBounds=YES;
     registBtn.titleLabel.font=BigFont(self.scale);
-    [registBtn setTitle:@"注册" forState:UIControlStateNormal];
+    [registBtn setTitle:@"提交申请" forState:UIControlStateNormal];
     [registBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [registBtn setBackgroundImage:[UIImage ImageForColor:navigationControllerColor] forState:UIControlStateNormal];
     [registBtn addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
@@ -345,7 +452,7 @@
     bottomTip.textColor=navigationControllerColor;
     [_scrollView addSubview:bottomTip];
     bottomTip.textAlignment=NSTextAlignmentCenter;
-    bottomTip.text=@"提交申请成功，我们会在5个工作日内完成审核，请耐心等待";
+    bottomTip.text=@"提交申请成功，我们会在3-5个工作日内完成审核，请耐心等待";
     setY=bottomTip.bottom+20*self.scale;
     
     _scrollView.contentSize=CGSizeMake(Vwidth, setY);
@@ -364,41 +471,65 @@
     UITapGestureRecognizer * tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(mChoosePhoto:)];
     if (_imgsMentou.count==0) {
         CGFloat btnX= Vwidth - (btnW + marginX);
+        btnX=marginX;/////////由左往右
+        
         CGFloat btnY= 40*self.scale;
         UIImageView * img=[[UIImageView alloc]initWithFrame:CGRectMake(btnX, btnY, btnW, btnH)];
+        
         img.image=[UIImage imageNamed:@"tian_jia"];
-        img.contentMode=UIViewContentModeCenter;
+        img.contentMode=UIViewContentModeScaleAspectFit;
+        img.layer.masksToBounds=YES;
         [_doorView addSubview:img];
         img.userInteractionEnabled=YES;
         [img addGestureRecognizer:tap];
+        
+        UILabel * labet=[[UILabel alloc]initWithFrame:CGRectMake(img.left, img.bottom, img.width, 20*self.scale)];
+        labet.font=DefaultFont(self.scale);
+        labet.textColor=grayTextColor;
+        labet.textAlignment=NSTextAlignmentCenter;
+        labet.text=@"点击上传图片";
+//        [_doorView addSubview:labet];
         
     }
     UITapGestureRecognizer * tapB=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(mPhotoBrower:)];
     if (_imgsMentou.count!=3) {//不够三张
         CGFloat btnX= Vwidth - (btnW + marginX);
+        btnX=marginX;//由左往右
         CGFloat btnY= 40*self.scale;
         UIImageView * img=[[UIImageView alloc]initWithFrame:CGRectMake(btnX, btnY, btnW, btnH)];
+        img.layer.masksToBounds=YES;
         img.image=[UIImage imageNamed:@"tian_jia"];
-        img.contentMode=UIViewContentModeCenter;
+        img.contentMode=UIViewContentModeScaleAspectFit;
         [_doorView addSubview:img];
         img.userInteractionEnabled=YES;
         [img addGestureRecognizer:tap];
+        
+        UILabel * labet=[[UILabel alloc]initWithFrame:CGRectMake(img.left, img.bottom, img.width, 20*self.scale)];
+        labet.font=DefaultFont(self.scale);
+        labet.textColor=grayTextColor;
+        labet.textAlignment=NSTextAlignmentCenter;
+         labet.text=@"点击上传图片";
+//        [_doorView addSubview:labet];
         
         for (int i =0; i < _imgsMentou.count; i ++) {
          UIImageView * img=[UIImageView new];
          CGFloat btnY= i / column*(spY+btnH) +40*self.scale;
          CGFloat btnX=Vwidth - (btnW + marginX)-(i+1)*(btnW +spX);
+            btnX=(btnW+spX)*(i+1)+marginX;//由左往右
+            
+            
          img.frame=CGRectMake(btnX, btnY, btnW, btnH);
-  
-        if (_isRefuse) {
-            [img setImageWithURL:[NSURL URLWithString:_imgsMentou[i]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
-        }else{
+            img.contentMode=UIViewContentModeScaleAspectFill;
+            img.layer.masksToBounds=YES;
+//        if (_isRefuse) {
+//            [img setImageWithURL:[NSURL URLWithString:_imgsMentou[i]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
+//        }else{
             img.image=_imgsMentou[i];
-        }
+//        }
             
             
          [_doorView addSubview:img];
-            UIButton * btnDele=[[UIButton alloc]initWithFrame:CGRectMake(0, 0, 20, 20)];
+            UIButton * btnDele=[[UIButton alloc]initWithFrame:CGRectMake(0, 0, 20*self.scale, 20*self.scale)];
             [btnDele setBackgroundImage:[UIImage imageNamed:@"loan_photo_delete"] forState:UIControlStateNormal];
             [btnDele addTarget:self action:@selector(mDelePhoto:) forControlEvents:UIControlEventTouchUpInside];
             btnDele.tag=100+i;
@@ -411,14 +542,17 @@
     }else{//狗三张
         for (int i =0; i < _imgsMentou.count; i ++) {
           UIImageView * img=[UIImageView new];
+            img.contentMode=UIViewContentModeScaleAspectFill;
           CGFloat btnY= i / column*(spY+btnH) +40*self.scale;
           CGFloat btnX= Vwidth - (btnW + marginX)-i*(btnW +spX);
+            btnX=i*(btnW +spX)+marginX;//由左往右
+            img.layer.masksToBounds=YES;
           img.frame=CGRectMake(btnX, btnY, btnW, btnH);
-         if (_isRefuse) {
-            [img setImageWithURL:[NSURL URLWithString:_imgsMentou[i]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
-            }else{
+//         if (_isRefuse) {
+//            [img setImageWithURL:[NSURL URLWithString:_imgsMentou[i]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
+//            }else{
                 img.image=_imgsMentou[i];
-            }
+//            }
             
           [_doorView addSubview:img];
             img.userInteractionEnabled=YES;
@@ -433,12 +567,14 @@
 }
 
 -(void)mChoosePhoto:(UITapGestureRecognizer *)tap{
+       [self dismissKey];
     _isM=YES;
     _currentImgView=(UIImageView *)(tap.view);
     UIActionSheet *action = [[UIActionSheet alloc]initWithTitle:nil delegate:self cancelButtonTitle:@"取消" destructiveButtonTitle:@"拍照" otherButtonTitles:@"从相册选择", nil];
     [action showInView:self.view];
 }
 -(void)mDelePhoto:(UIButton *)sender{
+    [self dismissKey];
     [_imgsMentou removeObjectAtIndex:sender.tag-100];
     [self reshImgMentView];
     
@@ -450,22 +586,46 @@
 }
 
 -(void)btnEvent:(UIButton*)sender{
+       [self dismissKey];
+    
+    if (sender.tag==1001) {
+        GeoViewController * geoV=[GeoViewController new];
+        geoV.geoIndex=1;
+        geoV.block=^(NSString * string,NSMutableDictionary * dic){
+            _labelGeo1.text=string;
+            [_GeoDic setObject:[NSString stringWithFormat:@"%@",dic[@"province"]] forKey:@"sheng"];
+            [_GeoDic setObject:[NSString stringWithFormat:@"%@",dic[@"city"]] forKey:@"city"];
+            [_GeoDic setObject:[NSString stringWithFormat:@"%@",dic[@"county"]] forKey:@"xian"];
+            
+            
+        };
+        [self.navigationController pushViewController:geoV animated:YES];
+        return;
+    }
+    
     if (sender.tag==100){//地图
         GetLocationFromBMap * get=[GetLocationFromBMap new];
-        get.geoDic=_GeoDic;
+        get.isGet=NO;
+//        get.geoDic=_GeoDic;
         get.callBack=^(NSMutableDictionary * dic){
-            _GeoDic=dic;
+//            _GeoDic=dic;
+        
+        
+        
+            [_GeoDic setObject:[NSString stringWithFormat:@"%@",dic[@"address"]] forKey:@"address"];
+            [_GeoDic setObject:[NSString stringWithFormat:@"%@",dic[@"Lng"]] forKey:@"Lng"];
+            [_GeoDic setObject:[NSString stringWithFormat:@"%@",dic[@"Lat"]] forKey:@"Lat"];
             
-            _labelGeo.text=[NSString stringWithFormat:@"%@",_GeoDic[@"address"]];
+            
+            
+            
+            _labelGeo.text=[[NSString stringWithFormat:@"%@",_GeoDic[@"address"]] isEmptyString]?@"":[NSString stringWithFormat:@"%@",_GeoDic[@"address"]];
 //            [_labelGeo sizeToFit];
         };
         [self.navigationController pushViewController:get animated:YES];
     }else{//注册
 //        [self showPromptBoxWithSting:@"注册"];
-        if (_imgsMentou.count!=3) {
-            [self ShowAlertWithMessage:@"必须上传3张门头照!"];
-            return;
-        }
+     
         
         NSString * sfzzS=[self imgDataForString:_imgSfzz.image];
         NSString * sfzfS=[self imgDataForString:_imgSfzf.image];
@@ -473,12 +633,131 @@
         NSString * sPer=_tfPerson.text;
         NSString * sTel=_tfTel.text;
         NSString * sBuss=_tfBussname.text;
-        NSString * sYyzz=_tfYyzz.text;
-        NSString * sZzzs=_tfZzzs.text;
-        NSString * sMentou1=[self imgDataForString:(UIImage *)_imgsMentou[0]];
-        NSString * sMentou2=[self imgDataForString:(UIImage *)_imgsMentou[1]];
-        NSString * sMentou3=[self imgDataForString:(UIImage *)_imgsMentou[2]];
-    
+        
+        
+        
+//        NSString * sYyzz=_tfYyzz.text;
+//        NSString * sZzzs=_tfZzzs.text;
+        NSString * sYyzz=[self imgDataForString:_imgYyzz.image];
+        NSString * sZzzs=[self imgDataForString:_imgZzzs.image];
+  
+
+       
+        if ([sBuss isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入店铺名称"];
+            return;
+        }
+        if ([sPer isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入联系人名字"];
+            return;
+        }
+        if ([sTel isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入电话"];
+            return;
+        }
+        if (![sTel isValidateMobile]) {
+            [self showPromptBoxWithSting:@"请输入正确手机格式"];
+            return;
+        }
+        
+        
+        if (!_isZheng) {
+            [self ShowAlertWithMessage:@"请上传身份证正面图片"];
+            return;
+        }
+        if (!_isFan) {
+            [self ShowAlertWithMessage:@"请上传身份证反面图片"];
+            return;
+        }
+        
+        
+        
+        
+        //        if ([sYyzz isEmptyString]) {
+        //            [self showPromptBoxWithSting:@"请输入营业执照"];
+        //            return;
+        //        }
+        //        if ([sZzzs isEmptyString]) {
+        //            [self showPromptBoxWithSting:@"请输入资质证书"];
+        //            return;
+        //        }
+        
+        
+        
+        if (!_isyyzz) {
+            [self ShowAlertWithMessage:@"请上传营业执照图片"];
+            return;
+        }
+        if (!_iszzzs) {
+            [self ShowAlertWithMessage:@"请上传资质证书图片"];
+            return;
+        }
+
+
+        
+        
+        if (_imgsMentou.count<1) {
+            [self ShowAlertWithMessage:@"必须上传1-3张门头照!"];
+            return;
+        }
+        NSDictionary * mDic;
+        
+        switch (_imgsMentou.count) {
+            case 1:
+                mDic=@{@"mentou1":[self imgDataForString:(UIImage *)_imgsMentou[0]]};
+                break;
+            case 2:
+                mDic=@{@"mentou1":[self imgDataForString:(UIImage *)_imgsMentou[0]],
+                       @"mentou2":[self imgDataForString:(UIImage *)_imgsMentou[1]]};
+                break;
+            case 3:
+                mDic=@{@"mentou1":[self imgDataForString:(UIImage *)_imgsMentou[0]],
+                       @"mentou2":[self imgDataForString:(UIImage *)_imgsMentou[1]],
+                       @"mentou3":[self imgDataForString:(UIImage *)_imgsMentou[2]]};
+                break;
+                
+            default:
+                break;
+        }
+        
+//        NSString * sMentou1;
+//        NSString * sMentou2;
+//        NSString * sMentou3;
+//        sMentou1=[self imgDataForString:(UIImage *)_imgsMentou[0]];
+//        sMentou2=[self imgDataForString:(UIImage *)_imgsMentou[1]];
+//        sMentou3=[self imgDataForString:(UIImage *)_imgsMentou[2]];
+      
+        
+        
+
+        if ([[NSString stringWithFormat:@"%@",_GeoDic[@"sheng"]] isEmptyString]) {
+            [self showPromptBoxWithSting:@"请选择省份"];
+            return;
+        }
+        if ([[NSString stringWithFormat:@"%@",_GeoDic[@"city"]] isEmptyString]) {
+            [self showPromptBoxWithSting:@"请选择市"];
+            return;
+        }
+        if ([[NSString stringWithFormat:@"%@",_GeoDic[@"xian"]] isEmptyString]) {
+            [self showPromptBoxWithSting:@"请选择县"];
+            return;
+        }
+        if ([[NSString stringWithFormat:@"%@",_GeoDic[@"address"]]  isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入地址"];
+            return;
+        }
+        if ([[NSString stringWithFormat:@"%@",_GeoDic[@"Lng"]]  isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入经纬度"];
+            return;
+        }
+        if ([[NSString stringWithFormat:@"%@",_GeoDic[@"Lat"]]  isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入经纬度"];
+            return;
+        }
+        if ([_labelGeo.text isEmptyString]) {
+            [self showPromptBoxWithSting:@"请输入地址"];
+            return;
+        }
         
         NSMutableDictionary * dic=[NSMutableDictionary dictionaryWithDictionary:
                                    @{@"uid":sUid,
@@ -489,18 +768,27 @@
                                      @"sfzf":sfzfS,
                                      @"yyzz":sYyzz,
                                      @"zzzs":sZzzs,
-                                     @"mentou1":sMentou1,
-                                     @"mentou2":sMentou2,
-                                     @"mentou3":sMentou3}];
+                                     }];
+        [dic addEntriesFromDictionary:mDic];
+        
+
         [dic addEntriesFromDictionary:_GeoDic];
         
+        [self startAnimating:nil];
         [AnalyzeObject kaiDianWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+            [self stopAnimating];
             if ([ret isEqualToString:@"1"]) {
-                
+
+                [self showSAlertTitle:@"提示" Message:@"申请成功，请等待审核！" Delegate:self block:^(NSInteger index) {
+                       [self.appdelegate switchRootController];
+                }];
+
             }else{
-            [self showPromptBoxWithSting:msg];
+                [self showPromptBoxWithSting:msg];
             }
-         
+//            [self showSAlertTitle:@"提示" Message:@"申请成功，请等待审核！" Delegate:self block:^(NSInteger index) {
+//                [self.appdelegate switchRootController];
+//            }];
         }];
         
         
@@ -509,6 +797,7 @@
     
 }
 
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
@@ -516,6 +805,7 @@
 
 #pragma mark  -- photo  delegate
 -(void)choosePhoto:(UITapGestureRecognizer *)tap{
+    [self dismissKey];
     _isM=NO;
     _currentImgView=(UIImageView *)(tap.view);
     UIActionSheet *action = [[UIActionSheet alloc]initWithTitle:nil delegate:self cancelButtonTitle:@"取消" destructiveButtonTitle:@"拍照" otherButtonTitles:@"从相册选择", nil];
@@ -529,7 +819,7 @@
             UIImagePickerController *picker = [[UIImagePickerController alloc] init];
             picker.delegate = self;
             picker.sourceType = sourceType;
-            picker.allowsEditing=YES;
+//            picker.allowsEditing=YES;
             [self presentViewController:picker animated:YES completion:nil];
         }else
         {
@@ -544,12 +834,11 @@
             
             
             pickerVc.callBack = ^(NSArray *assets){
-                
+                if (_imgsMentou.count>=3) {
+                    [self ShowAlertWithMessage:@"最多只能添加三张图片！"];
+                    return ;
+                }
                 for (ALAsset *  asset in assets) {
-                    if (_imgsMentou.count>=3) {
-                        [self ShowAlertWithMessage:@"最多只能添加三张图片！"];
-                        return ;
-                    }
                     ZLPickerBrowserPhoto *phao = [ZLPickerBrowserPhoto photoAnyImageObjWith:asset];
                     [_imgsMentou addObject:phao.photoImage];
                 }
@@ -563,21 +852,14 @@
                 UIImagePickerController *picker = [[UIImagePickerController alloc] init];
                 picker.delegate = self;
                 picker.sourceType = sourceType;
-                picker.allowsEditing=YES;
+//                picker.allowsEditing=YES;
                 [self presentViewController:picker animated:YES completion:nil];
             }else
             {
                 NSLog(@"无法调用相册");
             }
         }
-        
-        
-        
-  
-        
-        
-        
-        
+ 
     }
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info{
@@ -586,14 +868,29 @@
             [self ShowAlertWithMessage:@"图片最多只能3张!"];
             return;
         }
-        [_imgsMentou addObject:info[UIImagePickerControllerEditedImage]];
+        [_imgsMentou addObject:info[UIImagePickerControllerOriginalImage]];
         [self reshImgMentView];
     }else{
-        _currentImgView.image=info[UIImagePickerControllerEditedImage];
-        [picker dismissViewControllerAnimated:YES completion:nil];
+        if (_currentImgView.tag==1002) {
+            _isZheng=YES;
+        }
+        
+        if (_currentImgView.tag==1003) {
+            _isFan=YES;
+        }
+        
+        if (_currentImgView.tag==1050) {
+            _isyyzz=YES;
+        }
+        if (_currentImgView.tag==1051) {
+            _iszzzs=YES;
+        }
+        
+        
+        _currentImgView.image=info[UIImagePickerControllerOriginalImage];
+       
     }
-    
- 
+     [picker dismissViewControllerAnimated:YES completion:nil];
 }
 -(NSString *)imgDataForString:(UIImage *)image{
     NSString *encodedImageStr=@"";
@@ -604,6 +901,7 @@
 //        scale= 1.0;
 //    }
     UIImage *im = [self scaleImage:image scaleFactor:0];
+
     NSData *data= UIImageJPEGRepresentation(im, .7);
     encodedImageStr=[data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
     return encodedImageStr;
@@ -611,6 +909,7 @@
 #pragma mark--------图片按比例压缩，
 -(UIImage *) scaleImage: (UIImage *)image scaleFactor:(float)scaleBy
 {
+ 
     if (image.size.width>1000) {
         scaleBy = 1000/image.size.width;
     }else{
@@ -627,6 +926,34 @@
     UIGraphicsEndImageContext();
     return newimg;
 }
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
+}
+
+
+-(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string{
+    NSString * newString=[textField.text stringByReplacingCharactersInRange:range withString:string];
+    if (textField.tag>=1000) {
+        NSString * string1=@"[0-9a-zA-Z]+";
+        NSPredicate *rege = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",string1];
+        if ([rege evaluateWithObject:newString]||[newString isEmptyString]) {
+            return YES;
+        }
+        return  NO;
+    }else{
+        return YES;
+//       4 return  [newString isValidateNum]||[newString isEmptyString];
+        
+    }
+
+}
+//#pragma  mark -0-
+//
+//-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
+//    if (buttonIndex==0) {
+//        [self.appdelegate switchRootController];
+//    }
+//}
 /*
 #pragma mark - Navigation
 

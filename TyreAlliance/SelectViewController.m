@@ -198,11 +198,16 @@
                 label.textColor=navigationControllerColor;
                 
                 if (_listType==ListTypeBrands) {
-                _selectedPara=label.text;
+                   _selectedPara=label.text;
+                   _selectedId=[NSString stringWithFormat:@"%@",[(NSDictionary *)(_datas[sender.tag-100]) valueForKey:@"P_id"]];
+                    
+                    
+                    [NSString stringWithFormat:@"%d",sender.tag-100];
                 }
             }else{
                 if (_listType==ListTypeStander) {
                     _selectedPara=label.text;
+                    _selectedId=[NSString stringWithFormat:@"%@",[(NSDictionary *)(_datas[sender.tag-100]) valueForKey:@"G_id"]];
                 }
             }
         }
@@ -215,7 +220,7 @@
 -(void)commitOrCancel:(UIButton *)sender{
     if (sender.tag==100) {
         if (_callBack) {
-            _callBack(_selectedPara);
+            _callBack(_selectedPara,_selectedId);
         }
     }else{
         

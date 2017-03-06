@@ -122,6 +122,9 @@ static const CGFloat kDetailsLabelFontSize = 12.f;
 
 + (MB_INSTANCETYPE)showHUDAddedTo:(UIView *)view animated:(BOOL)animated {
 	MBProgressHUD *hud = [[self alloc] initWithView:view];
+//    hud.frame=CGRectMake(0, 69, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height-69);
+    
+    
 	[view addSubview:hud];
 	[hud show:animated];
 	return MB_AUTORELEASE(hud);

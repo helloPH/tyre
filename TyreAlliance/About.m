@@ -8,7 +8,7 @@
 
 #import "About.h"
 
-@interface About ()
+@interface About ()<UIWebViewDelegate>
 
 @end
 
@@ -34,13 +34,29 @@
     [self.navigationController popViewControllerAnimated:YES];
 }
 -(void)newView{
-    
+    UIWebView * webView=[[UIWebView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+10*self.scale  , Vwidth, Vheight-self.NavImg.height-10*self.scale)];
+    webView.delegate=self;
+    webView.backgroundColor=superBackgroundColor;
+    [webView loadHTMLString:_urlString baseURL:[NSURL URLWithString:_urlString]];
+    [self.view addSubview:webView];
     
     
 }
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+#pragma mark -- webView delegate
+-(BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType{
+    [self startAnimating:nil];
+    return YES;
+}
+-(void)webViewDidStartLoad:(UIWebView *)webView{
+     [self stopAnimating];
+}
+-(void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error{
+    [self stopAnimating];
+    [self showBtnEmpty:YES];
 }
 
 /*

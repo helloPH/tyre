@@ -10,4 +10,6 @@
 
 @interface WithDraw : SuperViewController
 
+@property (nonatomic,strong)NSString * stringJin;
+@property (nonatomic,strong)void (^block)(BOOL isSuccess);
 @end

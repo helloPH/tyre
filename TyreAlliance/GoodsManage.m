@@ -26,6 +26,7 @@
     // Do any additional setup after loading the view.
 }
 -(void)newNavi{
+    
     self.TitleLabel.text=@"商品管理";
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
     [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
@@ -43,7 +44,7 @@
 
     NSArray * datas=@[@"上架商品管理",@"下架商品管理"];
     for (int i =0; i < datas.count;  i ++) {
-        CellView * cellView=[[CellView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+i*44*self.scale, Vwidth, 44*self.scale)];
+        CellView * cellView=[[CellView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+10*self.scale+i*44*self.scale, Vwidth, 44*self.scale)];
         cellView.btn.tag=100+i;
         [cellView.btn addTarget:self action:@selector(skip:) forControlEvents:UIControlEventTouchUpInside];
         [self.view addSubview:cellView];

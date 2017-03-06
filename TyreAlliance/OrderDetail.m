@@ -51,8 +51,8 @@
     }
     [self startAnimating:nil];
     
-    if (_orderType==0 || _orderType==1) {
-            _ziid=@"50000000";
+//    if (_orderType==0 || _orderType==1) {
+
         NSDictionary * dic=@{@"ziid":_ziid};
         [AnalyzeObject get1OrderDetailWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
             [self stopAnimating];
@@ -60,33 +60,28 @@
                 [_dataDic addEntriesFromDictionary:model];
                 [_datas addObjectsFromArray:(NSArray *)(_dataDic[@"plist"])];
                 [self newView];
+
             }else{
                 [self showPromptBoxWithSting:msg];
             }
         }];
-    }
+//    }
     
-    else {
-          _ziid=@"1";
-        NSDictionary * dic =@{@"zipid":_ziid};
-        [AnalyzeObject get2OrderDetailWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
-            [self stopAnimating];
-            if ([ret isEqualToString:@"1"]) {
-                [_dataDic addEntriesFromDictionary:model];
-                [_datas addObjectsFromArray:(NSArray *)(_dataDic[@"plist"])];
-                [self newView];
-            }else{
-                [self showPromptBoxWithSting:msg];
-            }
-        }];
-    }
-    
+//    else {
+//        NSDictionary * dic =@{@"zipid":_ziid};
+//        [AnalyzeObject get2OrderDetailWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+//            [self stopAnimating];
+//            if ([ret isEqualToString:@"1"]) {
+//                [_dataDic addEntriesFromDictionary:model];
+//                [_datas addObjectsFromArray:(NSArray *)(_dataDic[@"plist"])];
+//                [self newView];
+//            }else{
+//                [self showPromptBoxWithSting:msg];
+//            }
+//        }];
+//    }
 
-
-
-    
-
-    
+   
 }
 -(void)newView{
     _scrollView=[[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
@@ -104,7 +99,34 @@
             labelStates.textColor=blackTextColor;
             labelStates.textAlignment=NSTextAlignmentLeft;
             [cellView addSubview:labelStates];
-            labelStates.text=[NSString stringWithFormat:@"订单状态:%@",_dataDic[@"states"]];
+            NSString * statestr;
+            switch (_orderType) {
+                case -1:
+//                    statest=@"-1";
+                    statestr=@"已取消";
+                    break;
+                case 0:
+//                    states=@"0";
+                    statestr=@"待付款";
+                    break;
+                case 1:
+//                    states=@"1";
+                    statestr=@"待发货";
+                    break;
+                case 2:
+//                    states=@"2";
+                    statestr=@"已发货";
+                    break;
+                case 3:
+//                    states=@"3";
+                    statestr=@"已完成";
+                    break;
+                default:
+                    break;
+            }
+
+            
+            labelStates.text=[NSString stringWithFormat:@"订单状态:%@",statestr];
         
        
             
@@ -112,7 +134,7 @@
             orderNum.font=DefaultFont(self.scale);
             orderNum.textColor=blackTextColor;
             orderNum.right=Vwidth-10*self.scale;
-            orderNum.textAlignment=NSTextAlignmentLeft;
+            orderNum.textAlignment=NSTextAlignmentRight;
             [cellView addSubview:orderNum];
             orderNum.text=[NSString stringWithFormat:@"订单号:%@",_dataDic[@"oid"]];
     
@@ -123,7 +145,7 @@
             wellCome.font=DefaultFont(self.scale);
             wellCome.textColor=blackTextColor;
             [cellView addSubview:wellCome];
-            wellCome.text=[NSString stringWithFormat:@"感谢您在%@购物，欢迎再次光临!",@"胎联盟"];
+            wellCome.text=[NSString stringWithFormat:@"感谢您在%@购物，欢迎再次光临!",@"胎之盟"];
     
             [wellCome sizeToFit];
         }
@@ -149,7 +171,7 @@
     scordView.backgroundColor=[UIColor whiteColor];
     [_scrollView addSubview:scordView];
     UIImageView * contactImg=[[UIImageView alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, 20*self.scale, 20*self.scale)];
-    contactImg.image=[UIImage imageNamed:@"person"];
+    contactImg.image=[UIImage imageNamed:@"lianxi_ren"];
     contactImg.contentMode=UIViewContentModeCenter;
     [scordView addSubview:contactImg];
     UILabel * labelContact=[[UILabel alloc]initWithFrame:CGRectMake(contactImg.right+5*self.scale, contactImg.top, 100*self.scale, 15*self.scale)];
@@ -209,13 +231,13 @@
         imgView.layer.borderWidth=0.5;
         [cellView   addSubview:imgView];
         imgView.frame=CGRectMake(10*self.scale, 10*self.scale, 70*self.scale, 70*self.scale);
-        
-        NSString * imgS=[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"logo"]]];
-        [imgView setImageWithURL:[NSURL URLWithString:imgS] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
+        imgView.contentMode=UIViewContentModeScaleAspectFit;
+        NSString * imgS=[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"plogo"]]];
+        [imgView setImageWithURL:[NSURL URLWithString:imgS] placeholderImage:[UIImage imageNamed:@"noData"]];
         
         UILabel * labelIntro=[UILabel new];
         labelIntro.numberOfLines=2;
-        labelIntro.font=Small10Font(self.scale);
+        labelIntro.font=DefaultFont(self.scale);
         labelIntro.textColor=blackTextColor;
         [cellView addSubview:labelIntro];
         labelIntro.frame=CGRectMake(imgView.right+10*self.scale, imgView.top, Vwidth-30*self.scale-imgView.width, 30*self.scale);
@@ -224,26 +246,28 @@
         UILabel * labelPrice=[UILabel new];
         labelPrice.numberOfLines=1;
         labelPrice.textColor=lightOrangeColor;
-        labelPrice.font=DefaultFont(self.scale);
+        labelPrice.font=Big17Font(self.scale);
         [cellView addSubview:labelPrice];
         labelPrice.frame=CGRectMake(imgView.right+10*self.scale, labelIntro.bottom, labelIntro.width, 20*self.scale);
 //        labelPrice.text=[NSString stringWithFormat:@"￥%@",dic[@"newprice"]];
         
-        if (_orderType==0||_orderType==1) {
+        
+//        if (_orderType==0||_orderType==1) {
             NSString * xian=[NSString stringWithFormat:@"￥%@  ",dic[@"newprice"]];
             NSString * yuan=[NSString stringWithFormat:@"原价￥%@",dic[@"oldprice"]];
             NSMutableAttributedString * att=[[NSMutableAttributedString alloc]initWithString:xian];
             [att appendAttributedString:[yuan getDeleteLineText]];
             labelPrice.attributedText=att;
-        }else{
-            labelPrice.text=[NSString stringWithFormat:@"￥%@ ",dic[@"price"]];
-        }
+//        }else{
+//            labelPrice.text=[NSString stringWithFormat:@"￥%@ ",dic[@"price"]];
+//        }
+ 
         
  
         
         UILabel * labelCount=[[UILabel alloc]initWithFrame:labelPrice.frame];
         labelCount.numberOfLines=1;
-        labelCount.textColor=lightOrangeColor;
+        labelCount.textColor=blackTextColor;
         labelCount.font=DefaultFont(self.scale);
         [cellView addSubview:labelCount];
         labelCount.right=Vwidth-10*self.scale;
@@ -253,7 +277,7 @@
         
         UILabel * labelStandard=[UILabel new];
         labelStandard.numberOfLines=1;
-        labelStandard.font=Small10Font(self.scale);
+        labelStandard.font=DefaultFont(self.scale);
         labelStandard.textColor=blackTextColor;
         [cellView addSubview:labelStandard];
         labelStandard.frame=labelPrice.frame;
@@ -274,15 +298,56 @@
                                      @{@"title":@"合计:",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
                                      ];
     
-    if (_orderType==0 || _orderType==1) {
-        bottonTitles=@[@{@"title":@"付款时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"paydate"]]},
-                       @{@"title":@"下单时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"xiadandate"]]},
-                       @{@"title":@"发货时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"fahuo_date"]]},
-                       @{@"title":@"收货时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"shouhuo_date"]]},
-                       @{@"title":@"合计:",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
-                       ];
-
+    
+    switch (_orderType) {
+        case 0:
+            bottonTitles=@[@{@"title":@"下单时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"xiadandate"]]},
+                           @{@"title":@"合计",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
+                           ];
+            break;
+        case 1:
+            bottonTitles=@[@{@"title":@"付款时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"paydate"]]},
+                           @{@"title":@"下单时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"xiadandate"]]},
+                           @{@"title":@"支付方式",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"pay_fangshi"]]},
+                           @{@"title":@"合计",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
+                           ];
+            
+            break;
+        case 2:
+            bottonTitles=@[@{@"title":@"付款时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"paydate"]]},
+                           @{@"title":@"下单时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"xiadandate"]]},
+                           @{@"title":@"发货时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"fahuo_date"]]},
+                           @{@"title":@"支付方式",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"pay_fangshi"]]},
+                           @{@"title":@"配送方式",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"wu_liu_name"]]},
+                           @{@"title":@"运单号",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"wu_liu_num"]]},
+                           @{@"title":@"合计",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
+                           ];
+ 
+            break;
+        case 3:
+            bottonTitles=@[@{@"title":@"付款时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"paydate"]]},
+                           @{@"title":@"下单时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"xiadandate"]]},
+                           @{@"title":@"发货时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"fahuo_date"]]},
+                           @{@"title":@"收货时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"shouhuo_date"]]},
+                           @{@"title":@"支付方式",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"pay_fangshi"]]},
+                           @{@"title":@"配送方式",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"wu_liu_name"]]},
+                           @{@"title":@"运单号",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"wu_liu_num"]]},
+                           @{@"title":@"合计",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
+                           ];
+            
+            break;
+        case -1:
+            bottonTitles=@[
+                           @{@"title":@"下单时间:",@"content":[NSString stringWithFormat:@"%@",_dataDic[@"xiadandate"]]},
+                           @{@"title":@"合计",@"content":[NSString stringWithFormat:@"￥%@",_dataDic[@"allprice"]]},
+                           ];
+            
+            break;
+        default:
+            break;
     }
+    
+    
     
     setY=setY+10*self.scale;
     for (int i =0 ; i < bottonTitles.count; i ++) {
@@ -303,7 +368,7 @@
         
         
         
-        if (i==4 || i==5) {
+        if ([cellView.titleLabel.text isEqualToString:@"支付方式"] || [cellView.titleLabel.text isEqualToString:@"合计"] || [cellView.titleLabel.text isEqualToString:@"配送方式"]) {
             cellView.top+=10;
         }
         setY=cellView.bottom;

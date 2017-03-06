@@ -10,4 +10,9 @@
 
 @interface EditBankCard : SuperViewController
 
+@property (nonatomic,strong)NSDictionary * cardInfo;
+@property (nonatomic,strong)NSString * cId;
+@property (nonatomic,assign)BOOL isHave;
+
+@property (nonatomic,strong)void (^block)(BOOL succed);
 @end

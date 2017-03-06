@@ -97,27 +97,36 @@
             NSArray * datas=[(NSDictionary *)model objectForKey:@"Product_list"];
             
             [_datas addObjectsFromArray:datas];
-            [_tableView reloadData];
+            [self reshView];
             
             if ([datas count]==0) {
                 [_tableView.mj_footer endRefreshingWithNoMoreData];
-                [self showPromptBoxWithSting:@"没有更多数据!"];
             }else{
                 [_tableView.mj_footer endRefreshing];
-                 [self showPromptBoxWithSting:msg];
             }
+            
+            
+//            [self showFailed:NO];
         }else{
             [_tableView.mj_footer endRefreshing];
-            [self showPromptBoxWithSting:msg];
+//            if (_datas.count==0) {
+//                [self showFailed:YES];
+//            }
         }
+        [self showBtnEmpty:_datas.count==0?YES:NO];
         
     }];
     
     
 }
+-(void)reshView{
+//    [self showBtnEmpty:_datas.count==0?YES:NO];
+    [_tableView reloadData];
+}
 -(void)screenBtn:(UIButton *)sender{
     if (!_screenControl) {
         [self loadScreenData];
+        [self.view bringSubviewToFront:_screenControl];
 //        _screenControl=[self newScreenControl];
         return;
     }
@@ -125,6 +134,7 @@
     
     if (_screenControl.hidden==YES) {
         _screenControl.hidden=NO;
+        [self.view bringSubviewToFront:_screenControl];
         [UIView animateWithDuration:0.3 animations:^{
             _screenControl.alpha=1;
         }];
@@ -235,10 +245,34 @@
 //    [baseUrl stringByAppendingString:[NSString stringWithFormat:@"%@",dataDic[@"P_Logo"]]];
     
     
-    [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dataDic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"beijing_tu"]];
-    cell.labelIntro.text=[NSString stringWithFormat:@"名称:%@",dataDic[@"P_name"]];
-    cell.labelStandard.text=[NSString stringWithFormat:@"规格:%@",dataDic[@"P_GuiGe"]];
-    cell.labelComCount.text=[NSString stringWithFormat:@"评价数量:%@",dataDic[@"count"]];
+    [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dataDic[@"P_Logo"]]]] placeholderImage:[UIImage imageNamed:@"noData"]];
+    
+   
+    
+    
+//    cell.labelIntro.text=[NSString stringWithFormat:@"名称:%@",dataDic[@"P_name"]];
+    NSMutableAttributedString * text11=[[NSMutableAttributedString alloc]initWithString:@"名称："];
+    NSMutableAttributedString * text12=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dataDic[@"P_name"]]];
+    [text12 addAttribute:NSForegroundColorAttributeName value:grayTextColor range:NSMakeRange(0, text12.length)];
+    [text11 appendAttributedString:text12];
+    cell.labelIntro.attributedText=text11;
+    
+    
+    
+    
+    NSMutableAttributedString * text21=[[NSMutableAttributedString alloc]initWithString:@"规格："];
+    NSMutableAttributedString * text22=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dataDic[@"P_GuiGe"]]];
+    [text22 addAttribute:NSForegroundColorAttributeName value:grayTextColor range:NSMakeRange(0, text22.length)];
+    [text21 appendAttributedString:text22];
+    cell.labelStandard.attributedText=text21;
+    
+    
+    NSMutableAttributedString * text31=[[NSMutableAttributedString alloc]initWithString:@"评价数量："];
+    NSMutableAttributedString * text32=[[NSMutableAttributedString alloc]initWithString:[NSString stringWithFormat:@"%@",dataDic[@"count"]]];
+    [text32 addAttribute:NSForegroundColorAttributeName value:grayTextColor range:NSMakeRange(0, text32.length)];
+    [text31 appendAttributedString:text32];
+    cell.labelComCount.attributedText=text31;
+//    cell.labelComCount.text=[NSString stringWithFormat:@"评价数量:%@",dataDic[@"count"]];
     return cell;
 }
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
@@ -311,6 +345,7 @@
         if (i==0) {
             [bgBtn setBackgroundImage:[UIImage imageNamed:@"all_ding"] forState:UIControlStateSelected];
             [bgBtn setTitleColor:navigationControllerColor forState:UIControlStateSelected];
+            bgBtn.selected=YES;
         }
         bgBtn.layer.cornerRadius=3;
         bgBtn.layer.masksToBounds=YES;
@@ -324,7 +359,7 @@
         
         [bgView addSubview:bgBtn];
         [bgBtn addTarget:self action:@selector(btnClick:) forControlEvents:UIControlEventTouchUpInside];
-        bgBtn.selected=YES;
+//        bgBtn.selected=YES;
         setY=bgBtn.bottom+spaceY;
     }
     
@@ -358,6 +393,7 @@
         if (i==0) {
             [bgBtn setBackgroundImage:[UIImage imageNamed:@"all_ding"] forState:UIControlStateSelected];
             [bgBtn setTitleColor:navigationControllerColor forState:UIControlStateSelected];
+            bgBtn.selected=YES;
         }
         bgBtn.layer.cornerRadius=3;
         bgBtn.layer.masksToBounds=YES;
@@ -367,7 +403,7 @@
         
         [bgView addSubview:bgBtn];
         [bgBtn addTarget:self action:@selector(btnClick:) forControlEvents:UIControlEventTouchUpInside];
-          bgBtn.selected=YES;
+//          bgBtn.selected=YES;
         setY=bgBtn.bottom+spaceY;
     }
     
@@ -425,10 +461,17 @@
     }
 
     if (!sender.selected && sender.tag==baseTag) {//点击的是全部按钮  状态是NO
-        for (int i=baseTag; i < count+baseTag; i ++) {
+        for (int i=baseTag; i < count+baseTag; i ++) {//单选
             UIButton * btn=(UIButton *)[_screenControl viewWithTag:i];
-            btn.selected=YES;
+            btn.selected=NO;
         }
+        
+        sender.selected=YES;
+        
+//        for (int i=baseTag; i < count+baseTag; i ++) {
+//            UIButton * btn=(UIButton *)[_screenControl viewWithTag:i];
+//            btn.selected=YES;
+//        }
 
     }else   if (sender.tag!=baseTag) {
         for (int i=baseTag; i < count+baseTag; i ++) {//单选

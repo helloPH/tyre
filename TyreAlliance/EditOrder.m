@@ -7,8 +7,11 @@
 //
 
 #import "EditOrder.h"
+#import "WuLiuList.h"
 
-@interface EditOrder ()
+
+
+@interface EditOrder ()<UIScrollViewDelegate,UITextFieldDelegate>
 @property (nonatomic,strong)UIScrollView * scrollView;
 @property (nonatomic,strong)UITextField * tfWlname;
 @property (nonatomic,strong)UITextField * tfWlnum;
@@ -42,11 +45,14 @@
     _datas=_dataDic[@"eary"];
     
 }
+
 -(void)newView{
     _scrollView = [[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+10*self.scale, Vwidth, Vheight-self.NavImg.height-10*self.scale)];
     _scrollView.backgroundColor=[UIColor whiteColor];
     [self.view addSubview:_scrollView];
-    
+    _scrollView.delegate=self;
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_scrollView addGestureRecognizer:tap];
     
     
     UILabel * labelConsignee = [UILabel new];
@@ -97,7 +103,8 @@
         imgView.layer.borderWidth=0.5;
         [cellView   addSubview:imgView];
         imgView.frame=CGRectMake(10*self.scale, 10*self.scale, 70*self.scale, 70*self.scale);
-        [imgView setImageWithURL:[NSURL URLWithString:dic[@"plogo"]] placeholderImage:[UIImage imageNamed:@"luntai_tai"]];
+        imgView.contentMode=UIViewContentModeScaleAspectFit;
+        [imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:dic[@"plogo"]]] placeholderImage:[UIImage imageNamed:@"noData"]];
         
         UILabel * labelIntro=[UILabel new];
         labelIntro.numberOfLines=2;
@@ -143,15 +150,17 @@
    
     NSArray * titles=@[@{@"title":[NSString stringWithFormat:@"共%@件商品",_dataDic[@"count"]],@"place":@""},
                        @{@"title":@"发货物流",@"place":@"请输入您的物流名称"},
-                       @{@"title":@"物流单号",@"place":@"请输入您的物流单号"},
-                       @{@"title":@"取货时间",@"place":@"请输入您的取货时间"}];
+                       @{@"title":@"物流单号",@"place":@"请输入您的物流单号"}/*,
+                       @{@"title":@"取货时间",@"place":@"请输入您的取货时间"}*/];
 //     CGFloat setYY=0;
     CGFloat Y=setY;
     
-    for (int i =0; i < 4; i ++) {
+    for (int i =0; i < titles.count; i ++) {
         CellView * cellView = [[CellView alloc]initWithFrame:CGRectMake(0, Y+10*self.scale+i*40*self.scale, Vwidth, 40*self.scale)];
         [_scrollView addSubview:cellView];
         cellView.titleLabel.text=[titles[i]valueForKey:@"title"];
+        
+        
         
         if (i==0) {
             UILabel * labelPaid = [[UILabel alloc]initWithFrame:cellView.titleLabel.frame];
@@ -166,12 +175,29 @@
             tf.font=DefaultFont(self.scale);
             tf.placeholder=[titles[i]valueForKey:@"place"];
             [cellView addSubview:tf];
+            tf.delegate=self;
+            tf.tag=100+i;
             
             
             if (i==1) {
                 _tfWlname=tf;
+                UIButton * wuliuBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, 0, 80*self.scale, 30*self.scale)];
+                [cellView addSubview:wuliuBtn];
+                wuliuBtn.centerY=cellView.height/2;
+                wuliuBtn.right=Vwidth-10*self.scale;
+                wuliuBtn.titleLabel.font=DefaultFont(self.scale);
+                wuliuBtn.layer.cornerRadius=3;
+                wuliuBtn.layer.borderColor=darkOrangeColor.CGColor;
+                wuliuBtn.layer.borderWidth=1*self.scale;
+                [wuliuBtn setTitleColor:darkOrangeColor forState:UIControlStateNormal];
+                [wuliuBtn setTitle:@"选取物流" forState:UIControlStateNormal];
+                [wuliuBtn addTarget:self action:@selector(wuliuBtnEvent:) forControlEvents:UIControlEventTouchUpInside];
+                
+                
+                
             }
             if (i==2) {
+                tf.keyboardType=UIKeyboardTypeAlphabet;
                 _tfWlnum=tf;
             }
             
@@ -219,19 +245,34 @@
     if (sender.tag==101) {
     [self PopVC:nil];
     }else{
+        if ([_tfWlname.text isEmptyString]) {
+            [self ShowAlertWithMessage:@"请输入物流名称"];
+            return;
+        }
+//        if ([_tfWlnum.text isEmptyString]) {
+//            [self ShowAlertWithMessage:@"请输入物流单号"];
+//            return;
+//        }
+        
+        
         NSDictionary * dic=@{@"ziid":[NSString stringWithFormat:@"%@",_dataDic[@"ziid"]],
-                             @"wlname":[NSString stringWithFormat:@"%@",_tfWlname.text],
+                             @"wlname":[[NSString stringWithFormat:@"%@",_tfWlname.text] isEmptyString]?@"":[NSString stringWithFormat:@"%@",_tfWlname.text],
                              @"wlnum":[NSString stringWithFormat:@"%@",_tfWlnum.text]};
         [AnalyzeObject confirmDeliverGoodsWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
            
             if ([ret isEqualToString:@"1"]) {
-            
+              
+                if (_block) {
+                    _block(YES);
+                }
+                [self PopVC:nil];
                 
             }else{
                 
             
             }
-            [self ShowAlertWithMessage:msg];
+            [self showPromptInWindowWithString:msg];
+//            [self ShowAlertWithMessage:msg];
 //            [self showPromptBoxWithSting:msg];
         }];
         
@@ -243,6 +284,29 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+#pragma  mark -- scrollDelegate
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
+}
+-(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string{
+    
+    if (textField.tag==102) {
+        NSString * string1=@"[0-9a-zA-Z]+";
+        NSPredicate *rege = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",string1];
+        if ([rege evaluateWithObject:[textField.text stringByReplacingCharactersInRange:range withString:string]]||[[textField.text stringByReplacingCharactersInRange:range withString:string] isEmptyString]) {
+            return YES;
+        }
+        return  NO;
+    }
+    return YES;
+}
+-(void)wuliuBtnEvent:(UIButton *)sender{
+    WuLiuList * wuliu=[WuLiuList new];
+    wuliu.block=^(NSString * wuliu){
+        _tfWlname.text=wuliu;
+    };
+    [self.navigationController pushViewController:wuliu animated:YES];
 }
 
 /*

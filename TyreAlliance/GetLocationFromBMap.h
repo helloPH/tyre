@@ -9,6 +9,9 @@
 #import "SuperViewController.h"
 
 @interface GetLocationFromBMap : SuperViewController
+@property (nonatomic,assign)BOOL isGet;
+@property (nonatomic,assign)NSString * addreString;
+
 @property (nonatomic,strong)void (^ callBack)(NSMutableDictionary  * geoDic);
 @property (nonatomic,strong)NSMutableDictionary * geoDic;
 @end

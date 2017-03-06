@@ -10,10 +10,10 @@
 #import "MerchantEnter.h"
 #import "FindPassWord.h"
 #import "BeComeMerchant.h"
-
+#import "IQKeyboardManager.h"
 #import "XGPush.h"
 
-@interface LogIn ()<UITextFieldDelegate>
+@interface LogIn ()<UITextFieldDelegate,UIScrollViewDelegate>
 @property (nonatomic,strong)UIScrollView * scrollView;
 @property(nonatomic,strong)Block block;
 @property (nonatomic,strong)NSArray * tfs;
@@ -30,6 +30,8 @@
     self = [super init];
     if (self) {
         _block = blocks;
+        
+        
     }
 
     return self;
@@ -53,33 +55,26 @@
 -(void)PopVC:(UIButton *)sender{
     [self.navigationController popViewControllerAnimated:YES];
 }
+-(void)dismissKey{
+    [[IQKeyboardManager sharedManager]resignFirstResponder];
+}
 -(void)newView{
     _scrollView=[[UIScrollView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height)];
     _scrollView.backgroundColor=superBackgroundColor;
+    _scrollView.delegate=self;
+    UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKey)];
+    [_scrollView addGestureRecognizer:tap];
+    
+    
+    
     [self.view addSubview:_scrollView];
     
     UIImageView * headImg=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, Vwidth/2)];
     [_scrollView addSubview:headImg];
-    headImg.image=[UIImage ImageForColor:navigationControllerColor];
+    headImg.image=[UIImage imageNamed:@"loginBg"];
     
-    UILabel * titleDown=[[UILabel alloc]initWithFrame:CGRectMake(0, 0, 100*self.scale,20*self.scale)];
-    titleDown.center=headImg.center;
-    titleDown.textAlignment=NSTextAlignmentCenter;
-    titleDown.font=DefaultFont(self.scale);
-    titleDown.textColor=[UIColor whiteColor];
-    [headImg addSubview:titleDown];
-    titleDown.text=@"商家版";
     
-    UILabel * titleUp=[[UILabel alloc]initWithFrame:titleDown.frame];
-    titleUp.height=40*self.scale;
-    titleUp.bottom=titleDown.top;
-    titleUp.textAlignment=NSTextAlignmentCenter;
-    titleUp.font=[UIFont boldSystemFontOfSize:30*self.scale];
-    titleUp.textColor=[UIColor whiteColor];
-    [headImg addSubview:titleUp];
-    titleUp.text=@"胎联盟";
-    
-    NSArray * titles=@[@{@"img":@"phone_tel",@"title":@"请输入用户名/手机号码"},@{@"img":@"mima_ma",@"title":@"请输入登录密码"}];
+    NSArray * titles=@[@{@"img":@"phone_tel",@"title":@"请输入手机号码"},@{@"img":@"mima_ma",@"title":@"请输入登录密码"}];
     CGFloat setY=0;
     NSMutableArray * tfms=[NSMutableArray array];
     [tfms removeAllObjects];
@@ -103,9 +98,15 @@
         setY=cellView.bottom;
         if (i==0) {
             _tfTel=tf;
+            [_tfTel limitText:@11];
+            _tfTel.keyboardType=UIKeyboardTypePhonePad;
 //            [tf limitText:@11];
         }else{
+         
             _tfPwd=tf;
+            [_tfPwd limitText:@12];
+            _tfPwd.secureTextEntry=YES;
+            _tfPwd.keyboardType=UIKeyboardTypeAlphabet;
         }
         [tfms addObject:tf];
     }
@@ -129,7 +130,7 @@
     [_scrollView addSubview:askFor];
     askFor.titleLabel.font=DefaultFont(self.scale);
     [askFor setTitleColor:grayTextColor forState:UIControlStateNormal];
-    [askFor setTitle:@"申请入驻" forState:UIControlStateNormal];
+    [askFor setTitle:@"商家入驻" forState:UIControlStateNormal];
     [askFor sizeToFit];
     [askFor addTarget:self action:@selector(btnEvent:) forControlEvents:UIControlEventTouchUpInside];
     askFor.tag=101;
@@ -149,27 +150,13 @@
 }
 -(void)btnEvent:(UIButton *)sender{
     
-    [XGPush setAccount:@"tlm123"];
-    [self.appdelegate zhuce];
-    if (_block) {
-        _block(YES);
-    }
-    
-    
-    
-    
-    
-    return;
-    
-    
-    
     switch (sender.tag) {
         case 100:{//登录
             for (UITextField * tf in _tfs) {
                 if ([tf isKindOfClass:[UITextField class]]) {
                     if (tf.tag==100) {//用户名或手机号
-                        if (![tf.text isValidateNickname] && ![tf.text isValidateMobileAndTel]) {
-                            [self ShowAlertWithMessage:@"请输入正确的用户名或者手机号"];
+                        if ( ![tf.text isValidateMobile]) {
+                            [self ShowAlertWithMessage:@"请输入正确的手机号"];
                             return ;
                         }
                     }else{//登录密码
@@ -180,9 +167,19 @@
                     }
                 }
             }
-            NSDictionary * dic=@{@"tel":_tfTel.text,
-                                 @"pwd":_tfPwd.text};
             
+
+            
+            
+            NSString* telValue=[_tfTel.text Des_EncryptForKey:DesKey Iv:DesValue];
+            NSString* pwdValue=[_tfPwd.text Des_EncryptForKey:DesKey Iv:DesValue];
+            NSString* typeValue=[@"1" Des_EncryptForKey:DesKey Iv:DesValue];
+
+            
+            
+            NSDictionary * dic=@{@"tel":telValue,
+                                 @"pwd":pwdValue,
+                                 @"type":typeValue};
             
             [self startAnimating:nil];
             [AnalyzeObject loginWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
@@ -193,72 +190,98 @@
                     NSInteger statesI=states.integerValue;
                     
                     
+                    
+                    
                     [[Stockpile sharedStockpile] setID:[NSString stringWithFormat:@"%@",[dic objectForKey:@"uid"]]];
-                    [[Stockpile sharedStockpile] setQiLogo:[NSString stringWithFormat:@"%@",[dic objectForKey:@"ulogo"]]];
-                    [[Stockpile sharedStockpile] setName:[NSString stringWithFormat:@"%@",[dic objectForKey:@"uname"]]];
-//                    statesI=2;
+                    
+          
                     switch (statesI) {
                         case 0:{//刚注册 未申请
                             BeComeMerchant * become=[BeComeMerchant new];
                             [self.navigationController pushViewController:become animated:YES];
-                            [self showPromptBoxWithSting:@"您还不是商家,请申请!"];
-//                            [self ShowAlertTitle:@"提示" Message:@"您还不是商家，是否申请成为商家？" Delegate:self Block:^(NSInteger index) {
-//                                if (index==1) {
-//                 
-//                                }
-//
-//                            }];
+                            [self showPromptInWindowWithString:@"您还不是商家,请申请!"];
+                            
                         }
                             break;
                         case 1:{//已申请 审核中
-                            [self showPromptBoxWithSting:@"正在审核 申请商家！"];
+                            [self ShowAlertWithMessage:@"正在审核!"];
                         }
                             break;
                         case 2:{//审核通过
+                            //                            [self startAnimating:nil];
+                            //                            [(AppDelegate*)([UIApplication sharedApplication].delegate) switchRootController];
+                            
+                            [[Stockpile sharedStockpile]setAccount:_tfTel.text];
+                            [[Stockpile sharedStockpile]setPassword:_tfPwd.text];
                         
-                            [(AppDelegate*)([UIApplication sharedApplication].delegate) switchRootController];
-                      
+                            
+                            
+                            printf("%s",[[Stockpile sharedStockpile].ID UTF8String]);
+                            
+                            [XGPush setAccount:[NSString stringWithFormat:@"TZM_%@",[Stockpile sharedStockpile].ID]];
+                            [self.appdelegate zhuce];
+                            
                             
                             if (_block) {
                                 _block(YES);
                             }
                             
+                            //                            NSDictionary * dic=@{@"uid":[Stockpile sharedStockpile].ID};
+                            
+                            //                            [AnalyzeObject getPerInfoWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+                            //                                [self stopAnimating];
+                            //                                if (ret) {
+                            ////                                    NSDictionary * dic=(NSDictionary*)model;
+                            //
+                            ////                                    [[Stockpile sharedStockpile]setName:[NSString stringWithFormat:@"%@",   dic[@"u_name"]]];
+                            ////                                    [[Stockpile sharedStockpile]setTel:[NSString stringWithFormat:@"%@",   dic[@"u_tel"]]];
+                            ////                                    [[Stockpile sharedStockpile]setNickName:[NSString stringWithFormat:@"%@",dic[@"Buss_name"]]];
+                            ////                                    [[Stockpile sharedStockpile]setLogo:[NSString stringWithFormat:@"%@",dic[@"u_logo"]]];
+                            //
+                            //
+                            //                                }else{
+                            ////                                    self ShowAlertWithMessage:@"获取用户"
+                            ////                                    [self showPromptBoxWithSting:@"获取用户资料失败!"];
+                            //                                }
+                            //
+                            //                            }];
                             
                         }
                             break;
                         case 3:{//申请被拒绝
-                            [self ShowAlertTitle:@"提示" Message:@"你的申请商家被拒绝，是否再次申请？" Delegate:self Block:^(NSInteger index) {
-                                if (index==1) {
-                                    BeComeMerchant * become=[BeComeMerchant new];
-                                    become.isRefuse=YES;
-                                    [self.navigationController pushViewController:become animated:YES];
-                                }
-                            }];
+                            
+                            NSDictionary * dic=(NSDictionary*)model;
+                            
+                            [[Stockpile sharedStockpile]setID:[NSString stringWithFormat:@"%@",   dic[@"uid"]]];
+                            [[Stockpile sharedStockpile]setName:[NSString stringWithFormat:@"%@",   dic[@"uname"]]];
+                            [[Stockpile sharedStockpile]setLogo:[NSString stringWithFormat:@"%@",dic[@"ulogo"]]];
+                            
+                            
+                            BeComeMerchant * become=[BeComeMerchant new];
+                            become.isRefuse=YES;
+                            become.reson=[dic objectForKey:@"reson"];
+                            [self.navigationController pushViewController:become animated:YES];
+                            
                         }
                             break;
                         default:
                             break;
                     }
                     
-                    
-
-                    
                     if ([msg isEqualToString:@"未申请商家"]) {
-         
+                        
                         
                     }
                     
-//                    [self showPromptBoxWithSting:msg];
 
- 
+                    
                 }else{
-               [self showPromptBoxWithSting:msg];
-//
+                    [self showPromptBoxWithSting:msg];
                 }
-                
-                //跳过网络
-
-         
+//                //跳过网络
+//                if (_block) {
+//                    _block(YES);
+//                }
 
             }];
     
@@ -291,6 +314,8 @@
 }
 #pragma  mark -- textField  delegate 
 -(BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string{
+    NSString * newString=[textField.text stringByReplacingCharactersInRange:range withString:string];
+    
     
     // 判断  提交按钮是否可用
     _loginBtn.selected=YES;
@@ -310,12 +335,18 @@
     
     
 
-
+//    if (textField.tag==100) {
+//        return [newString isValidateNum]||[newString isEmptyString];
+//    }
   
     return YES;
 }
 -(void)textFieldDidEndEditing:(UITextField *)textField{
 
+}
+#pragma  mark -- scrollDelegate
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [self dismissKey];
 }
 
 /*

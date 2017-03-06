@@ -8,6 +8,7 @@
 
 #import "NSString+Helper.h"
 
+
 #import <UIKit/UIKit.h>
 @implementation NSString (Helper)
 -(NSString *)EmptyStringByWhitespace{
@@ -72,10 +73,84 @@
 #pragma mark  银行账号判断
 -(BOOL)isValidateBank
 {
-    NSString *bankNo=@"^\\d{16}|\\d{19}+$";
-    NSPredicate *phoneTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",bankNo];
-    //    NSLog(@"phoneTest is %@",phoneTest);
-    return [phoneTest evaluateWithObject:self];
+//    NSString *bankNo=@"^\\d{16}|\\d{19}+$";
+//    NSPredicate *phoneTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",bankNo];
+//    //    NSLog(@"phoneTest is %@",phoneTest);
+//    return [phoneTest evaluateWithObject:self];
+
+    int oddsum = 0;     //奇数求和
+    
+    int evensum = 0;    //偶数求和
+    
+    int allsum = 0;
+    
+    int cardNoLength = (int)[self length];
+    
+    int lastNum = [[self substringFromIndex:cardNoLength-1] intValue];
+    
+    
+    
+    NSString * cardn = [self substringToIndex:cardNoLength - 1];
+    
+    for (int i = cardNoLength -1 ; i>=1;i--) {
+        
+        NSString *tmpString = [cardn substringWithRange:NSMakeRange(i-1, 1)];
+        
+        int tmpVal = [tmpString intValue];
+        
+        if (cardNoLength % 2 ==1 ) {
+            
+            if((i % 2) == 0){
+                
+                tmpVal *= 2;
+                
+                if(tmpVal>=10)
+                    
+                    tmpVal -= 9;
+                
+                evensum += tmpVal;
+                
+            }else{
+                
+                oddsum += tmpVal;
+                
+            }
+            
+        }else{
+            
+            if((i % 2) == 1){
+                
+                tmpVal *= 2;
+                
+                if(tmpVal>=10)
+                    
+                    tmpVal -= 9;
+                
+                evensum += tmpVal;
+                
+            }else{
+                
+                oddsum += tmpVal;
+                
+            }
+            
+        }
+        
+    }
+    
+    allsum = oddsum + evensum;
+    
+    allsum += lastNum;
+    
+    if((allsum % 10) == 0){
+        
+        return YES;
+    }
+    else{
+        
+        return NO;
+    }
+    
 }
 #pragma mark 手机号码验证 MODIFIED BY HELENSONG
 -(BOOL) isValidateMobile
@@ -89,7 +164,54 @@
     
     return [phoneTest evaluateWithObject:self];
 }
+#pragma mark - 判断是否为数字格式
+-(BOOL)isValidateNum{
+    NSString * num1=@"^[0-9][0-9]+";
+    NSPredicate * regexNum=[NSPredicate predicateWithFormat:num1];
+    return [regexNum evaluateWithObject:self];
+}
+#pragma mark - 判断是否为金额输入格式
+-(BOOL)isValidateMoneying{
+    //正在输入的金额必须以数字开头
+    
+     //没有小数点
+   NSString * money1=@"^[0-9]{1}";
+   NSPredicate *regextestmoney1=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money1];
 
+    NSString * money11=@"^[1-9][0-9]+$";
+    NSPredicate *regextestmoney11=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money11];
+    
+     //有小数点
+    NSString * money2=@"^[0-9]{1}\\.{0,1}";
+    NSPredicate *regextestmoney2=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money2];
+
+    NSString * money21=@"^[0-9]{1}\\.{1}[0-9]{1,2}";
+    NSPredicate *regextestmoney21=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money21];
+    
+    
+    NSString * money3=@"^[1-9]{1}[0-9]+\\.{1}[0-9]{1,2}";
+    NSPredicate *regextestmoney3=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money3];
+    
+    NSString * money31=@"^[1-9]{1}[0-9]+\\.{0,1}";
+    NSPredicate *regextestmoney31=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money31];
+    
+    
+    if ([self isEmptyString]||[regextestmoney1 evaluateWithObject:self]||[regextestmoney2 evaluateWithObject:self] ||[regextestmoney21 evaluateWithObject:self]||[regextestmoney3 evaluateWithObject:self]||[regextestmoney11 evaluateWithObject:self]||[regextestmoney31 evaluateWithObject:self])
+    {
+        return YES;
+    }else{
+        return NO;
+    }
+
+}
+#pragma mark - 判断是否为金额格式
+-(BOOL)isValidateMoneyed{
+    //正在输入的金额必须以数字开头
+    NSString * money=@"^(([0-9]|([1-9][0-9]{0,9}))((\\.[0-9]{1,2})?))$";
+    NSPredicate *regextestmoney=[NSPredicate predicateWithFormat:@"SELF MATCHES %@", money];
+    return  [regextestmoney evaluateWithObject:self];
+
+}
 
 - (BOOL)validateMobile
 {
@@ -139,7 +261,6 @@
         return NO;
     }
 }
-
 
 
 
@@ -201,9 +322,17 @@
 #pragma mark 密码
 -(BOOL) isValidatePassword
 {
-    NSString *passWordRegex = @"^[a-zA-Z0-9]{6,12}+$";
-    NSPredicate *passWordPredicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",passWordRegex];
-    return [passWordPredicate evaluateWithObject:self];
+//    NSString *passWordRegex = @"[a-zA-Z0-9]{6,12}";
+////    passWordRegex=@"(?=.*[0-9])(?=.*[a-z])(?=.*[!@#$%^&*])(?=.*[A-Z]).{6,12}";
+//    
+//    NSPredicate *passWordPredicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@",passWordRegex];
+//    return [passWordPredicate evaluateWithObject:self];
+    if ([self length]>=6 && [self length]<=12) {
+        return YES;
+    }else{
+        return NO;
+    }
+    
 }
 #pragma mark 昵称
 - (BOOL) isValidateNickname
@@ -239,7 +368,7 @@
     NSNumber *nuber = [[NSNumber alloc]initWithLong:(NSUnderlinePatternSolid |NSUnderlineStyleSingle)];
     
     [attributeString addAttribute:NSStrikethroughStyleAttributeName value:nuber range:range];
-    [attributeString addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:10] range:range];
+    [attributeString addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:12] range:range];
     [attributeString addAttribute:NSForegroundColorAttributeName value:[UIColor lightGrayColor] range:range];
     
     return attributeString;

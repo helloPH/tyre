@@ -1,13 +1,13 @@
 //
-//  AddBankCard.h
+//  DataManager.h
 //  TyreAlliance
 //
-//  Created by wdx on 16/9/26.
+//  Created by wdx on 2016/12/12.
 //  Copyright © 2016年 wdx. All rights reserved.
 //
 
 #import "SuperViewController.h"
 
-@interface AddBankCard : SuperViewController
+@interface DataManager : SuperViewController
 
 @end

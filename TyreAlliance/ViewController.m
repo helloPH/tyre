@@ -8,7 +8,10 @@
 
 #import "ViewController.h"
 #import "CellView.h"
+//#import "Reachability.h"
+#import "AFNetworkReachabilityManager.h"
 
+#import "DataManager.h"
 #import "GoodsManage.h"
 #import "EvaluateManage.h"
 #import "FinanceManage.h"
@@ -28,30 +31,71 @@
 @property (nonatomic,strong)UIScrollView * scrollView;
 @property (nonatomic,strong)NSArray * datas;
 @property (nonatomic,strong)UIImageView * headImg;
+@property (nonatomic,strong)UILabel * lableName;
+@property (nonatomic,strong)UILabel * labelId;
+//@property (nonatomic, strong) AFNetworkReachabilityManager * netManager;
+
+
 
 @end
 @implementation ViewController
 -(void)viewDidLoad{
     [super viewDidLoad];
-    [[Stockpile sharedStockpile] setID:@"1"];
+//    [[Stockpile sharedStockpile] setID:@"1"];
+
 
     [self newView];
-    
-    
-    
+    [self reshData];
+//    [self reshView];
+
+//    [self reshData];
 
     
 //  [[NSUserDefaults standardUserDefaults]setValue:@(NO) forKey:@"isLogin"];
     
 }
+-(void)reshData{
+    [self startAnimating:nil];
+    NSDictionary * dic=@{@"uid":[Stockpile sharedStockpile].ID};
+    [AnalyzeObject getPerInfoWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
+        [self stopAnimating];
+        [_scrollView.mj_header endRefreshing];
+        if ([ret isEqualToString:@"1"]) {
+            [[Stockpile sharedStockpile]setName:[NSString stringWithFormat:@"%@",model[@"u_name"]]];
+            [[Stockpile sharedStockpile]setLogo:[NSString stringWithFormat:@"%@",model[@"u_logo"]]];
+            [[Stockpile sharedStockpile]setNickName:[NSString stringWithFormat:@"%@",model[@"Buss_name"]]];
+            [[Stockpile sharedStockpile]setTel:[NSString stringWithFormat:@"%@",model[@"u_tel"]]];
+            [self reshView];
+        }else{
+            
+            [self showPromptBoxWithSting:@"用户信息刷新失败\n请下拉重新加载"];
+        }
+    }];
+    
+}
+-(void)reshView{
+    if ([[Stockpile sharedStockpile].logo hasPrefix:@"http:"]) {
+        
+        [_headImg setImageWithURL:[NSURL URLWithString:[Stockpile sharedStockpile].logo] placeholderImage:[UIImage imageNamed:@"people_hui"]];
+    } else{
+        
+        [_headImg setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[Stockpile sharedStockpile].logo]] placeholderImage:[UIImage imageNamed:@"people_hui"]];
+    }
+    _lableName.text=[Stockpile sharedStockpile].nickName;
+    _labelId.text=[NSString stringWithFormat:@"ID:%@",[Stockpile sharedStockpile].ID];
+}
+-(void)xiala{
+    [self reshData];
+}
 -(void)newView{
     _scrollView=[[UIScrollView alloc]initWithFrame:self.view.frame];
     _scrollView.backgroundColor=superBackgroundColor;
+    [_scrollView addHeardTarget:self Action:@selector(xiala)];
     [self.view addSubview:_scrollView];
     CGFloat setY=0;
     
     UIImageView * imgView=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, Vwidth/2.0)];
-    imgView.image=[UIImage ImageForColor:navigationControllerColor];
+    imgView.image=[UIImage imageNamed:@"mainBg"];
     imgView.userInteractionEnabled=YES;
     [_scrollView addSubview:imgView];
     
@@ -68,21 +112,34 @@
     _headImg.layer.borderColor=[UIColor whiteColor].CGColor;
     _headImg.layer.borderWidth=2;
     [headBtn addSubview:_headImg];
-    [_headImg setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[Stockpile sharedStockpile].logo]] placeholderImage:[UIImage imageNamed:@"touxiang_t"]];
+    
+
+
 //    _headImg.image=[UIImage imageNamed:@"touxiang_t"];
 //    [_headImg setImageWithURL:[NSURL URLWithString:[Stockpile sharedStockpile].logo] placeholderImage:[UIImage imageNamed:@"touxiang_t"]];
     _headImg.userInteractionEnabled=YES;
     UITapGestureRecognizer * tap=[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(choosePhoto:)];
     [_headImg addGestureRecognizer:tap];
     
-    UILabel * headLabel=[[UILabel alloc]initWithFrame:CGRectMake(0, _headImg.bottom, headBtn.width, headBtn.height-_headImg.height)];
+    UILabel * headLabel=[[UILabel alloc]initWithFrame:CGRectMake(0, _headImg.bottom, Vwidth, headBtn.height-_headImg.height)];
+    headLabel.centerX=headBtn.width/2;
+    headLabel.font=DefaultFont(self.scale);
     headLabel.textAlignment=NSTextAlignmentCenter;
     headLabel.textColor=[UIColor whiteColor];
-    headLabel.text=@"--";
-    headLabel.text=[Stockpile sharedStockpile].Name;
+    _lableName=headLabel;
     [headBtn addSubview:headLabel];
     
-    _datas=@[@{@"title":@"商品管理",@"imgUrl":@"shangpin_guanli",@"controller":NSStringFromClass([GoodsManage class])},
+    
+    UILabel * labelId=[[UILabel alloc]initWithFrame:CGRectMake(0, _lableName.bottom, Vwidth, headBtn.height-_headImg.height)];
+    labelId.centerX=headBtn.width/2;
+    labelId.font=DefaultFont(self.scale);
+    labelId.textAlignment=NSTextAlignmentCenter;
+    labelId.textColor=[UIColor whiteColor];
+    _labelId=labelId;
+    [headBtn addSubview:labelId];
+    
+    _datas=@[@{@"title":@"商家资料",@"imgUrl":@"geren_ren",@"controller":@""},
+                      @{@"title":@"商品管理",@"imgUrl":@"shangpin_guanli",@"controller":NSStringFromClass([GoodsManage class])},
                       @{@"title":@"评价管理",@"imgUrl":@"pingjia_guanli",@"controller":NSStringFromClass([EvaluateManage class])},
                       @{@"title":@"财务管理",@"imgUrl":@"caiwu_gl",@"controller":NSStringFromClass([FinanceManage class])},
                       @{@"title":@"订单管理",@"imgUrl":@"dingdan_gl",@"controller":NSStringFromClass([OrderManage class])},
@@ -94,7 +151,7 @@
                       @{@"title":@"设置",@"imgUrl":@"shezhi_gl",@"controller":NSStringFromClass([SettingCenter class])}
                    ];
 
-    CGFloat cellH=40*self.scale;
+    CGFloat cellH=45*self.scale;
     for (int i = 0; i < _datas.count; i++ ) {
         CellView * cellView=[[CellView alloc]initWithFrame:CGRectMake(0, imgView.bottom+10*self.scale + i * cellH, Vwidth, cellH)];
         [_scrollView addSubview:cellView];
@@ -120,7 +177,7 @@
         setY=cellView.bottom;
     }
     
-    _scrollView.contentSize=CGSizeMake(_scrollView.width, setY);
+    _scrollView.contentSize=CGSizeMake(_scrollView.width, setY+10*self.scale);
 }
 -(void)skip:(UIButton *)sender{
     
@@ -128,7 +185,13 @@
     
     
     switch (sender.tag-100) {
-        case 0://商品管理
+        case 0:
+        {
+            DataManager * data=[DataManager new];
+            [self.navigationController pushViewController:data animated:YES];
+        }
+            break;
+        case 1://商品管理
         {
             GoodsManage * goods=[GoodsManage new];
             goods.TitleLabel.text=[_datas[sender.tag-100] valueForKey:@"title"];
@@ -136,14 +199,14 @@
                 
         }
             break;
-        case 1://评价管理
+        case 2://评价管理
         {
             EvaluateManage * evaluate=[EvaluateManage new];
             evaluate.TitleLabel.text=[_datas[sender.tag-100] valueForKey:@"title"];
             [self.navigationController pushViewController:evaluate animated:YES];
         }
             break;
-        case 2://财务管理
+        case 3://财务管理
         {
             FinanceManage * finance = [FinanceManage new];
             finance.title=[_datas[sender.tag-100] valueForKey:@"title"];
@@ -152,7 +215,7 @@
         }
             
             break;
-        case 3://订单管理
+        case 4://订单管理
         {
             OrderManage * order = [OrderManage new];
             order.title=[_datas[sender.tag-100] valueForKey:@"title"];
@@ -160,7 +223,7 @@
             
         }
             break;
-        case 4://销售统计
+        case 5://销售统计
         {
             SalesStatistics * sale =[SalesStatistics new];
             sale.title=[_datas[sender.tag-100] valueForKey:@"title"];
@@ -168,21 +231,21 @@
             
         }
             break;
-        case 5://推荐的人
+        case 6://推荐的人
         {
             RecomMan * recom=[RecomMan new];
             recom.title=[_datas[sender.tag-100] valueForKey:@"title"];
             [self.navigationController pushViewController:recom animated:YES];
         }
             break;
-        case 6://消息中心
+        case 7://消息中心
         {
             MessageCenter * message = [MessageCenter new];
             message.title=[_datas[sender.tag-100] valueForKey:@"title"];
             [self.navigationController pushViewController:message animated:YES];
         }
             break;
-        case 7://我的二维码
+        case 8://我的二维码
         {
             MyTwoCode * twoCode=[MyTwoCode new];
             [self.navigationController pushViewController:twoCode animated:YES];
@@ -195,7 +258,7 @@
 //            [self.navigationController pushViewController:twoCode animated:YES];
 //        }
 //            break;
-        case 8://设置
+        case 9://设置
         {
             SettingCenter * set = [SettingCenter new];
             set.title=[_datas[sender.tag-100] valueForKey:@"title"];
@@ -211,7 +274,6 @@
 //    [self.navigationController pushViewController:vi animated:YES];
 }
 -(void)choosePhoto:(UITapGestureRecognizer *)tap{
-    
     UIActionSheet *action = [[UIActionSheet alloc]initWithTitle:nil delegate:self cancelButtonTitle:@"取消" destructiveButtonTitle:@"拍照" otherButtonTitles:@"从相册选择", nil];
     [action showInView:self.view];
 }
@@ -223,7 +285,7 @@
         {
             UIImagePickerController *picker = [[UIImagePickerController alloc] init];
             picker.delegate = self;
-            picker.allowsEditing=YES;
+//            picker.allowsEditing=YES;
             picker.sourceType = sourceType;
             [self presentViewController:picker animated:YES completion:nil];
         }else
@@ -242,7 +304,7 @@
             UIImagePickerController *picker = [[UIImagePickerController alloc] init];
             picker.delegate = self;
             picker.sourceType = sourceType;
-            picker.allowsEditing=YES;
+//            picker.allowsEditing=YES;
             [self presentViewController:picker animated:YES completion:nil];
         }else
         {
@@ -253,13 +315,16 @@
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info{
     NSDictionary * dic=@{@"uid":[Stockpile sharedStockpile].ID,
-                         @"logo":[self imgDataForString:info[UIImagePickerControllerEditedImage]],
+                         @"logo":[self imgDataForString:info[UIImagePickerControllerOriginalImage]],
                          };
+    
+    [self startAnimating:@"正在上传..."];
     [AnalyzeObject setPerInfoWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
-        
+        [self stopAnimating];
         if ([ret isEqualToString:@"1"]) {
             [[Stockpile sharedStockpile]setLogo:[ImgDuanKou stringByAppendingString:model[@"ulogo"]]];
-            [_headImg setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[Stockpile sharedStockpile].logo]]];
+            
+            [_headImg setImageWithURL:[NSURL URLWithString:[Stockpile sharedStockpile].logo]];
             [self showPromptInWindowWithString:@"头像修改成功!"];
         }else{
             [self showPromptInWindowWithString:@"头像修改失败!"];
@@ -310,4 +375,52 @@
     UIGraphicsEndImageContext();
     return newimg;
 }
+
+
+
+#pragma  mark -- 监测网络
+
+//- (void)dealloc
+//{
+//    
+//    [self.netManager startMonitoring];
+//    [[NSNotificationCenter defaultCenter]removeObserver:self];
+//}
+//- (void)networkStateChange
+//{
+//    [self checkNetworkState];
+//}
+//
+//- (void)checkNetworkState
+//{
+//    
+//    SuperViewController * superV=[SuperViewController new];
+//    
+//    
+//    // 1.检测wifi状态
+//    
+//    switch (_netManager.networkReachabilityStatus) {
+//        case -1:
+//            [self showPromptInWindowWithString:@"未知网络"];
+//            break;
+//        case 0:
+//            [self showPromptInWindowWithString:@"网络已断开"];
+//            
+//            break;
+//        case 1:
+//            [self showPromptInWindowWithString:@"数据网络已打开"];
+//            
+//            break;
+//        case 2:
+//            [self showPromptInWindowWithString:@"WIFI已打开"];
+//            
+//            break;
+//            
+//        default:
+//            break;
+//    }
+//    
+//}
+
+
 @end

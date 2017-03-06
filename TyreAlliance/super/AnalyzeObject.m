@@ -25,28 +25,28 @@
 
 -(void)loadData:(NSDictionary *)dic withUrl:(NSString *)url WithBlock:(void (^)(id, NSString *, NSString *))block{
  
- [[AFAppDotNetAPIClient sharedClient]GET:url parameters:dic progress:^(NSProgress * _Nonnull uploadProgress) {
- 
- } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
- NSNumber *retn = [responseObject objectForKey:@"msgcode"];
- NSString *ret = [NSString stringWithFormat:@"%@",retn];
- 
- NSString *msg =[NSString stringWithFormat:@"%@",[responseObject objectForKey:@"msg"]];
- 
- if ([ret isEqualToString:@"1"]) {
- 
- block([responseObject objectForKey:@"data"],ret,msg);
- }else{
- block(nil,ret,msg);
- 
- }
- 
- } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
- 
- block(nil,nil,@"当前无网络环境、请检查网络连接.");
- 
- }];
- 
+    [[AFAppDotNetAPIClient sharedClient]POST:url parameters:dic progress:^(NSProgress * _Nonnull uploadProgress) {
+        
+    } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+        NSNumber *retn = [responseObject objectForKey:@"msgcode"];
+        NSString *ret = [NSString stringWithFormat:@"%@",retn];
+        
+        NSString *msg =[NSString stringWithFormat:@"%@",[responseObject objectForKey:@"msg"]];
+        
+        if ([ret isEqualToString:@"1"]) {
+            
+            block([responseObject objectForKey:@"data"],ret,msg);
+        }else{
+            block(nil,ret,msg);
+            
+        }
+        
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        
+        block(nil,nil,@"当前无网络环境、请检查网络连接.");
+        
+    }];
+    
  
  }
 
@@ -55,7 +55,7 @@
  *获取验证码
  */
 +(void)getVerifyCodeWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
-    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Message"}];
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Message",@"role":@"1"}];
     [dicM addEntriesFromDictionary:dic];
     AnalyzeObject * ana=[AnalyzeObject new];
     [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
@@ -79,7 +79,10 @@
  */
 
 +(void)loginWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
-    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"User_Login",@"type":@"1"}];
+    
+    
+    
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"User_Login"}];
     [dicM addEntriesFromDictionary:dic];
     AnalyzeObject * ana=[AnalyzeObject new];
     [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
@@ -307,17 +310,17 @@
     }];
 }
 
-/*
- *订单详细(待评价，已完成)
- */
-+(void)get2OrderDetailWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
-    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Porder_Info"}];
-    [dicM addEntriesFromDictionary:dic];
-    AnalyzeObject * ana=[AnalyzeObject new];
-    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
-        block(model,ret,msg);
-    }];
-}
+///*
+// *订单详细(待评价，已完成)
+// */
+//+(void)get2OrderDetailWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+//    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Porder_Info"}];
+//    [dicM addEntriesFromDictionary:dic];
+//    AnalyzeObject * ana=[AnalyzeObject new];
+//    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+//        block(model,ret,msg);
+//    }];
+//}
 
 /*
  *银行卡
@@ -346,6 +349,20 @@
 /*
  *添加银行卡
  */
++(void)addCardWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Add_bank"}];
+    [dicM addEntriesFromDictionary:dic];
+    AnalyzeObject * ana=[AnalyzeObject new];
+    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+        block(model,ret,msg);
+    }];
+    
+    
+}
+
+/*
+ *编辑银行卡
+ */
 +(void)updateCardWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
     NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Edit_bank"}];
     [dicM addEntriesFromDictionary:dic];
@@ -365,6 +382,7 @@
         block(model,ret,msg);
     }];
 }
+
 /*
  *提现记录
  */
@@ -406,6 +424,17 @@
  */
 +(void)confirmDeliverGoodsWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
     NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"FaHuo",@"role":@"1"}];
+    [dicM addEntriesFromDictionary:dic];
+    AnalyzeObject * ana=[AnalyzeObject new];
+    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+        block(model,ret,msg);
+    }];
+}
+/*
+ *物流列表
+ */
++(void)getWuLiuListWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Wuliu"}];
     [dicM addEntriesFromDictionary:dic];
     AnalyzeObject * ana=[AnalyzeObject new];
     [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
@@ -461,7 +490,7 @@
  *用户反馈
  */
 +(void)getFeedBackWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
-    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"ShouHou_Fk"}];
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"ShouHou_Fk",@"role":@"1"}];
     [dicM addEntriesFromDictionary:dic];
     AnalyzeObject * ana=[AnalyzeObject new];
     [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
@@ -494,6 +523,28 @@
 }
 #pragma  mark  -- 设置
 /*
+ *我的二维码
+ */
++(void)geterCodeWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"My_Erwema"}];
+    [dicM addEntriesFromDictionary:dic];
+    AnalyzeObject * ana=[AnalyzeObject new];
+    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+        block(model,ret,msg);
+    }];
+}
+/*
+ *获取个人信息
+ */
++(void)getPerInfoWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"User_Info"}];
+    [dicM addEntriesFromDictionary:dic];
+    AnalyzeObject * ana=[AnalyzeObject new];
+    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+        block(model,ret,msg);
+    }];
+}
+/*
  *设置个人信息
  */
 +(void)setPerInfoWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
@@ -504,6 +555,18 @@
         block(model,ret,msg);
     }];
 }
+/*
+ *更新联系人  门头照等
+ */
++(void)upDatePerInfoWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Update_buss"}];
+    [dicM addEntriesFromDictionary:dic];
+    AnalyzeObject * ana=[AnalyzeObject new];
+    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+        block(model,ret,msg);
+    }];
+}
+
 /*
  *设置
  */
@@ -521,6 +584,17 @@
  */
 +(void)feedBackWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
     NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Fan_Kui"}];
+    [dicM addEntriesFromDictionary:dic];
+    AnalyzeObject * ana=[AnalyzeObject new];
+    [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {
+        block(model,ret,msg);
+    }];
+}
+/*
+ *修改密码
+ */
++(void)upDatePassWordWithDic:(NSDictionary *)dic WithBlock:(Blocks)block{
+    NSMutableDictionary * dicM=[NSMutableDictionary dictionaryWithDictionary:@{@"action":@"Change_Pwd"}];
     [dicM addEntriesFromDictionary:dic];
     AnalyzeObject * ana=[AnalyzeObject new];
     [ana loadData:dicM withUrl:@"tools/Interface.ashx?" WithBlock:^(id model, NSString *ret, NSString *msg) {

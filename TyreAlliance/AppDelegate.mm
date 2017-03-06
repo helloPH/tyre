@@ -10,6 +10,7 @@
 #import "ViewController.h"
 #import "LogIn.h"
 #import "Guidance.h"
+#import "AFNetworkReachabilityManager.h"
 
 #import <UMSocialCore/UMSocialCore.h>
 
@@ -32,21 +33,40 @@
 
 #import <BaiduMapAPI_Map/BMKMapView.h>//只引入所需的单个头文件
 
-@interface AppDelegate ()
+
+#import "OrderDetail.h"
+#import "MessageDeatail.h"
+
+#import <UserNotifications/UserNotifications.h>
+
+
+
+@interface AppDelegate ()<UIAlertViewDelegate,UNUserNotificationCenterDelegate>
+@property (nonatomic,strong)NSString * oid,* type,* mess;
+
+
+@property(nonatomic,strong)AlertBloc alertBlock;
 @property (nonatomic,strong)BMKMapManager * mapManager;
+@property (nonatomic,strong)UINavigationController * rootNavi;
 @end
 
 @implementation AppDelegate
-
+//-(BOOL)application:(UIApplication *)application willFinishLaunchingWithOptions:(NSDictionary *)launchOptions{
+//    UIViewController * lanuchController=[[UIStoryboard storyboardWithName:@"LaunchScreen" bundle:nil]instantiateViewControllerWithIdentifier:@"LaunchScreen"];
+//    UIView * lanuchView=lanuchController.view;
+//    [UIView animateWithDuration:1 animations:^{
+//        lanuchView.transform=CGAffineTransformScale(lanuchView.transform, 2, 2);
+//    }];
+//    return YES;
+//}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-
-
-    
     //系统配置
-    [[Stockpile sharedStockpile]setIsLogin:NO];
+    [[Stockpile sharedStockpile]setAccountType:@"1"];
+//    [[Stockpile sharedStockpile]setIsLogin:YES];
+//    [[Stockpile sharedStockpile]setIsSign:YES];
     [self switchRootController];
- 
+    
 //    请先启动BaiduMapManager
     _mapManager = [[BMKMapManager alloc]init];
     // 如果要关注网络及授权验证事件，请设定     generalDelegate参数
@@ -54,41 +74,52 @@
     if (!ret) {
         NSLog(@"manager start failed!");
     }
+
     
-    
-    
-    
-    
+
+
     //配置友盟
     [self setUpUMShare];
     //配置信鸽
-    [XGPush startApp:2200238710 appKey:@"ID7M99MW3G1C"];
     [XGPush handleLaunching:launchOptions];
-    
-    
     [self zhuce];
     // Override point for customization after application launch.
+    
+    
+    
+    if ([Stockpile sharedStockpile].isLogin) {
+        [XGPush setAccount:[NSString stringWithFormat:@"TZM_%@",[Stockpile sharedStockpile].ID]];
+        [self zhuce];
+    }
     return YES;
 }
 
--(void)zhuce{
 
-    float sysVer = [[[UIDevice currentDevice] systemVersion] floatValue];
-    if(sysVer < 8){
-        [self registerPush];
-    }
-    else{
-        [self registerPushForIOS8];
-    }
+-(void)zhuce{
     
 
+    [XGPush startApp:2200240179 appKey:@"I77Q4I78VMNU"];
+    
+    NSString * sysVerS = [[UIDevice currentDevice] systemVersion];
+    NSArray * sysVerA=[sysVerS componentsSeparatedByString:@"."];
+    NSInteger sysVer=[[NSString stringWithFormat:@"%@",sysVerA.firstObject] integerValue];
+    NSLog(@"%@",sysVerS);
+    
+    if(sysVer < 8){//iOS 8 以下
+        [self registerPush];
+    }else if(sysVer < 10){//iOS 8 以上 及 10 以下
+        [self registerPushForIOS8];
+    }else{//iOS 10 及以上
+        [self registerPushForIOS10];
+    }
 }
 
 
 #pragma mark -- 信鸽推送
-- (void)registerPush{
+- (void)registerPush{// iOS 8 以下的注册
     [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound)];
 }
+// iOS 8 以上 9 以下的注册
 - (void)registerPushForIOS8{
     //Types
     UIUserNotificationType types = UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert;
@@ -126,6 +157,31 @@
     
     [[UIApplication sharedApplication] registerForRemoteNotifications];
 }
+- (void)registerPushForIOS10{
+//            DispatchQueue.main.async {
+//                let settings = UIUserNotificationSettings(types: [.badge, .sound, .alert], categories: nil)
+//                UIApplication.shared().registerUserNotificationSettings(settings)
+//            }
+    
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        UIUserNotificationSettings * settings=[UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert | UIUserNotificationTypeBadge | UIUserNotificationTypeSound categories:nil];
+//        [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
+//    });
+    
+
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    center.delegate = self;
+    [center requestAuthorizationWithOptions:(UNAuthorizationOptionSound | UNAuthorizationOptionAlert | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error){
+        if( !error ){
+            [[UIApplication sharedApplication] registerForRemoteNotifications];
+        }
+    }];
+    
+}
+
+-(void)unRegistNoti{
+    [XGPush unRegisterDevice];
+}
 -(void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification{
     //notification是发送推送时传入的字典信息
     [XGPush localNotificationAtFrontEnd:notification userInfoKey:@"clockID" userInfoValue:@"myid"];
@@ -146,7 +202,6 @@
     //UIUserNotificationType allowedTypes = [notificationSettings types];
     
 }
-
 //按钮点击事件回调
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void (^)())completionHandler{
     if([identifier isEqualToString:@"ACCEPT_IDENTIFIER"]){
@@ -188,45 +243,124 @@
     
     NSString *str = [NSString stringWithFormat: @"Error: %@",err];
     
-    NSLog(@"[XGPush Demo]%@",str);
+    NSLog(@"      [XGPush Demo]%@                                             ",str);
     
 }
 
 - (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
 {
-    //推送反馈(app运行时)
-    [XGPush handleReceiveNotification:userInfo];
+    _oid=[NSString stringWithFormat:@"%@",userInfo[@"oid"]];
+    _type=[NSString stringWithFormat:@"%@",userInfo[@"type"]];
+    _mess=((NSDictionary *)userInfo[@"aps"])[@"alert"];
     
+    NSLog(@"%@",@"有朋自远方来 不亦乐乎");
     
-    //回调版本示例
-    /*
-     void (^successBlock)(void) = ^(void){
-     //成功之后的处理
-     NSLog(@"[XGPush]handleReceiveNotification successBlock");
-     };
-     
-     void (^errorBlock)(void) = ^(void){
-     //失败之后的处理
-     NSLog(@"[XGPush]handleReceiveNotification errorBlock");
-     };
-     
-     void (^completion)(void) = ^(void){
-     //完成之后的处理
-     NSLog(@"[xg push completion]userInfo is %@",userInfo);
-     };
-     
-     [XGPush handleReceiveNotification:userInfo successCallback:successBlock errorCallback:errorBlock completion:completion];
-     */
+    if (application.applicationState!=UIApplicationStateActive) {//未打开
+        
+            [self switchRootController];
+        switch (_type.integerValue) {
+            case 0:
+                
+                break;
+            case 1:{
+                
+                OrderDetail * orderDetail= [OrderDetail new];
+                orderDetail.ziid=_oid;
+                [_rootNavi pushViewController:orderDetail animated:YES];
+                
+            }
+                break;
+            case 2:
+            {
+                
+                MessageDeatail * messDetail=[MessageDeatail new];
+                [_rootNavi pushViewController:messDetail animated:YES];
+            }
+                break;
+            default:
+                break;
+        }
+        
+        
+    }else{//打开时
+        
+        
+        switch (_type.integerValue) {
+            case 0:{
+                UIAlertView *alt = [[UIAlertView alloc] initWithTitle:@"通知" message:_mess  delegate:nil cancelButtonTitle:nil otherButtonTitles:@"知道了", nil];
+                [alt show];
+            }
+                break;
+            case 1:
+            {
+                
+                UIAlertView * alert=[[UIAlertView alloc]initWithTitle:@"订单" message:_mess delegate:self cancelButtonTitle:@"忽略" otherButtonTitles:@"查看订单", nil];
+                [alert show];
+                
+            }
+                break;
+            case 2:
+            {
+                UIAlertView * alert=[[UIAlertView alloc]initWithTitle:@"消息" message:_mess delegate:self cancelButtonTitle:@"忽略" otherButtonTitles:@"查看消息", nil];
+                [alert show];
+            }
+                break;
+            default:
+                break;
+        }
+        
+
+    }
+//    [[UIApplication sharedApplication]setApplicationIconBadgeNumber:0];
+//    completionHandler(UIBackgroundFetchResultNewData);
+    
 }
 
 
+
+
+#pragma mark --  iOS 10 推送
+// iOS 10 在前台收到通知
+-(void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler{
+    
+    //功能：可设置是否在应用内弹出通知
+    completionHandler(UNNotificationPresentationOptionAlert);
+}
+
+
+// iOS 10  点击推送消息后回调 点击通知栏
+-(void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler{
+    
+
+    
+    [XGPush handleReceiveNotification:response.notification.request.content.userInfo successCallback:^{
+          NSLog(@"[XGDemo] Handle receive success");
+    } errorCallback:^{
+            NSLog(@"[XGDemo] Handle receive error");
+    } completion:^{
+        completionHandler();
+    }];
+    
+    
+
+}
+
+
+
+
+
+
 -(void)switchRootController{
+    
+    
     BOOL isSign=(BOOL)[Stockpile sharedStockpile].isSign;
     BOOL isLogin=(BOOL)[Stockpile sharedStockpile].isLogin;
     UINavigationController * mainNavi;
+    
     if (!isSign) {//新手引导页
         Guidance * guidance=[Guidance new];
         mainNavi=[[UINavigationController alloc]initWithRootViewController:guidance];
+        [[Stockpile sharedStockpile] setIsSign:YES];
     }else{
         if (isLogin) {
             ViewController * viewController=[ViewController new];
@@ -242,10 +376,8 @@
         }
     }
     
-    
-
-    
     self.window.rootViewController=mainNavi;
+    _rootNavi=mainNavi;
     [self.window makeKeyAndVisible];
     
     
@@ -267,10 +399,16 @@
     [[UMSocialManager defaultManager] setPlaform:UMSocialPlatformType_WechatTimeLine appKey:@"wx0c00583ae23400c2" appSecret:@"8fa201bb9f27d8c1a721f6bbaf7d79db" redirectURL:@"http://mobile.umeng.com/social"];
     //
 
+    
+    
     //设置分享到QQ互联的appKey和appSecret
-    [[UMSocialManager defaultManager] setPlaform:UMSocialPlatformType_QQ appKey:@"cY1Ehb2ugB2G6RH0"  appSecret:@"" redirectURL:@"http://mobile.umeng.com/social"];
-    [[UMSocialManager defaultManager]setPlaform:UMSocialPlatformType_Qzone appKey:@"cY1Ehb2ugB2G6RH0" appSecret:@"" redirectURL:@"http://mobile.umeng.com/social"];
-
+    [[UMSocialManager defaultManager] setPlaform:UMSocialPlatformType_QQ appKey:@"1105827110"  appSecret:nil redirectURL:@"http://mobile.umeng.com/social"];
+    [[UMSocialManager defaultManager]setPlaform:UMSocialPlatformType_Qzone appKey:@"1105827110" appSecret:nil redirectURL:@"http://mobile.umeng.com/social"];
+    
+    //100424468
+    
+    
+    
 
 }
 
@@ -302,6 +440,34 @@
 
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
+
+-(void)ShowAlertTitle:(NSString *)title Message:(NSString *)message Delegate:(id)delegate Block:(AlertBloc)block{
+    
+    UIAlertView *alert=[[UIAlertView alloc]initWithTitle:title message:message delegate:delegate cancelButtonTitle:@"取消" otherButtonTitles: @"查看",nil];
+    //alert.tintColor=pinkTextColor;
+    [alert show];
+    _alertBlock=block;
+}
+
+#pragma  mark -- alertDelegate
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
+    
+    if (buttonIndex==1) {
+        [self switchRootController];
+        if ([_type isEqualToString:@"1"]) {
+            OrderDetail * orderD=[OrderDetail new];
+            orderD.ziid=_oid;
+            [_rootNavi pushViewController:orderD animated:YES];
+        }else{
+            MessageDeatail * messDetail=[MessageDeatail new];
+//            messDetail.
+            [_rootNavi pushViewController:messDetail animated:YES];
+        }
+        
+
+    }
 }
 
 @end

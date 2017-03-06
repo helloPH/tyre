@@ -14,14 +14,19 @@
 
 @interface RecomMan ()<UITableViewDelegate,UITableViewDataSource>
 
-
+@property (nonatomic,strong)UIImageView * btnEmpty1;
 @property (nonatomic,assign)NSInteger yeIndex;
 @property (nonatomic,strong)NSMutableArray * datas;
+@property (nonatomic,assign)NSInteger countAll;
+
 
 @property (nonatomic,strong)NSMutableDictionary * erjiDataDic;
 @property (nonatomic,strong)NSMutableArray  * erjiDatas;
 @property (nonatomic,strong)UITableView * tableView;
 
+
+@property (nonatomic,strong)UIView * bottomView;
+@property (nonatomic,strong)UILabel * lableCount;
 @end
 
 @implementation RecomMan
@@ -35,7 +40,7 @@
     // Do any additional setup after loading the view.
 }
 -(void)newNavi{
-    self.TitleLabel.text=@"推荐的人";
+    self.TitleLabel.text=@"我推荐的人";
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
         [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
         [popBtn setImage:[UIImage imageNamed:@"left_b"] forState:UIControlStateHighlighted];
@@ -48,6 +53,7 @@
 }
 -(void)initData{
     _yeIndex=1;
+    _countAll=0;
     _contentType=ContentTypeLevel1;
     _datas=[NSMutableArray array];
     _erjiDataDic=[NSMutableDictionary dictionary];
@@ -55,7 +61,7 @@
     
 }
 -(void)reshData{
-
+    
     
     
     [self startAnimating:nil];
@@ -65,20 +71,27 @@
         [AnalyzeObject getLevel1RecommanWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
             [self stopAnimating];
             [_tableView.mj_header endRefreshing];
-            [_tableView.mj_footer endRefreshing];
-            if (_datas) {
-                [_datas removeAllObjects];
-            }
-            
             if ([ret isEqualToString:@"1"]) {
-
-                [_datas addObjectsFromArray:model];
-
+//                if (_datas.count<=0) {
+//                    [_datas removeAllObjects];
+//                }
+                if (_yeIndex==1) {
+                    [_datas removeAllObjects];
+                }
                 
-                [_tableView reloadData];
+                
+                [_datas addObjectsFromArray:model];
+                if ([model count]==0) {
+                    [_tableView.mj_footer endRefreshingWithNoMoreData];
+                }else{
+                    [_tableView.mj_footer endRefreshing];
+                }
             }else{
-                [self showPromptBoxWithSting:msg];
+                [_tableView.mj_footer endRefreshing];
             }
+            [self reshView];
+//             [_tableView reloadData];
+                 [self showBtnEmpty1:_datas.count==0?YES:NO];
         }];
         
     }else{
@@ -87,25 +100,61 @@
         [AnalyzeObject getLevel2RecommanWithDic:dic WithBlock:^(id model, NSString *ret, NSString *msg) {
             [self stopAnimating];
             [_tableView.mj_header endRefreshing];
-            [_tableView.mj_footer endRefreshing];
+            
             if ([ret isEqualToString:@"1"]) {
                 if (_erjiDataDic) {
                     [_erjiDataDic removeAllObjects];
                 }
-                if (_erjiDatas) {
-                    [_erjiDatas removeAllObjects];
+                    [_erjiDataDic addEntriesFromDictionary:model];
+                
+               NSInteger count=[NSString stringWithFormat:@"%@",_erjiDataDic[@"allcount"]?_erjiDataDic[@"allcount"]:@"0"].integerValue;
+                
+                
+         
+                
+                if (_yeIndex==1) {
+                    _countAll=count;
+                    if (_erjiDatas) {
+                        [_erjiDatas removeAllObjects];
+                    }
+                    
+                    
+                }else{
+                    _countAll=_countAll+count;
                 }
-                [_erjiDataDic addEntriesFromDictionary:model];
+      
                 [_erjiDatas addObjectsFromArray:_erjiDataDic[@"each"]];
                 
-                [_tableView reloadData];
+                if ([_erjiDataDic[@"each"] count]==0) {
+                    [_tableView.mj_footer endRefreshingWithNoMoreData];
+                }else{
+                    [_tableView.mj_footer endRefreshing];
+                }
+                
+               
             }else{
-                [self showPromptBoxWithSting:msg];
+                [_tableView.mj_footer endRefreshing];
             }
+            [self reshView];
+//             [_tableView reloadData];
+                 [self showBtnEmpty1:NO];
         }];
         
     }
     
+}
+-(void)reshView{
+    if (_contentType==ContentTypeLevel1) {
+        _tableView.height=Vheight-self.NavImg.height-90*self.scale;
+        _bottomView.hidden=YES;
+    }else{
+        _tableView.height=Vheight-self.NavImg.height-90*self.scale-_bottomView.height-10*self.scale;
+        _bottomView.hidden=NO;
+        _lableCount.text=[NSString stringWithFormat:@"%d",_countAll];
+    }
+    
+    [_tableView reloadData];
+
 }
 
 -(void)newView{
@@ -162,6 +211,36 @@
     [_tableView registerClass:[RecomManLevel2Cell class] forCellReuseIdentifier:@"cell2"];
     
     
+    
+    UIView * view1=[[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 50*self.scale)];
+    view1.backgroundColor=[UIColor whiteColor];
+    [self.view addSubview:view1];
+    view1.bottom=Vheight;
+    UIView * bottomLine=[[UIView alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 0.5*self.scale)];
+    bottomLine.backgroundColor=blackLineColore;
+    [view1 addSubview:bottomLine];
+    
+    _bottomView=view1;
+
+    
+    
+    
+    UILabel * labelName=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 10*self.scale, 100*self.scale, 20*self.scale)];
+    [view1 addSubview:labelName];
+    labelName.centerY=25*self.scale;
+    labelName.font=DefaultFont(self.scale);
+    labelName.textColor=blackTextColor;
+    labelName.text=@"二级推荐人总数";
+
+    UILabel * labelCount=[[UILabel alloc]initWithFrame:labelName.frame];
+    [view1 addSubview:labelCount];
+    labelCount.centerX=Vwidth-70*self.scale;
+    labelCount.textAlignment=NSTextAlignmentCenter;
+    labelCount.font=DefaultFont(self.scale);
+    labelCount.textColor=blackTextColor;
+    _lableCount=labelCount;
+    
+    
 }
 -(void)shangla{
     _yeIndex++;
@@ -173,7 +252,7 @@
 }
 -(void)selectBtn:(UIButton*)sender{
     _contentType=sender.tag-99;
-    
+    _yeIndex=1;
     [self reshData];
     
    
@@ -210,10 +289,11 @@
 }
 -(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
     if (_contentType==ContentTypeLevel1) {
-        return 1;
+//        return 1;
     }else{
-        return 2;
+//        return 2;
     }
+        return 1;
   
 }
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
@@ -228,7 +308,7 @@
     if (_contentType==ContentTypeLevel1) {
         RecomManLevel1Cell * cell=[tableView dequeueReusableCellWithIdentifier:@"cell1"];
         NSDictionary * dic=_datas[indexPath.row];
-        [cell.imgView setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@",dic[@"logo"]]] placeholderImage:[UIImage imageNamed:@"yiji_tuijianren"]];
+        [cell.imgView setImageWithURL:[NSURL URLWithString:[ImgDuanKou stringByAppendingString:[NSString stringWithFormat:@"%@",dic[@"logo"]]]] placeholderImage:[UIImage imageNamed:@"people_hui"]];
         cell.labelName.text=[NSString stringWithFormat:@"%@",dic[@"name"]];
         [cell.labelName sizeToFit];
         cell.labelPhone.text=[NSString stringWithFormat:@"联系方式:%@",dic[@"tel"]];
@@ -240,13 +320,21 @@
         NSDictionary * dic=_erjiDatas[indexPath.row];
         cell.labelName.text=[NSString stringWithFormat:@"%@",dic[@"name"]];
         [cell.labelName sizeToFit];
+        
+  
+        cell.labelPhone.text=[NSString stringWithFormat:@"%@",dic[@"tel"]];
+        [cell.labelPhone sizeToFit];
+       cell.labelPhone.left=cell.labelName.right+10*self.scale;
+        
+        
         cell.recomCount.text=[NSString stringWithFormat:@"%@",dic[@"count"]];
+        
         return cell;
     }
 }
 -(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
     if (_contentType==ContentTypeLevel1) {
-        return 0.0001;
+        return 0.001*self.scale;
     }else{
         return 50*self.scale;
     }
@@ -283,7 +371,7 @@
             labelCount.text=@"推广人数";
         }else{
             labelName.text=@"二级推荐人总数";
-            labelCount.text=[NSString stringWithFormat:@"%@",_erjiDataDic[@"allcount"]];
+            labelCount.text=[NSString stringWithFormat:@"%@",_erjiDataDic[@"allcount"]?_erjiDataDic[@"allcount"]:@"0"];
         }
         
         
@@ -291,13 +379,21 @@
     }
     
 }
+
+
+
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
-    FriendOrderDetail * orderDeatail=[FriendOrderDetail new];
-    NSDictionary * dic=_datas[indexPath.row];
-    orderDeatail.dlid=[NSString stringWithFormat:@"%@",dic[@"id"]];
-//    orderDeatail.dlid=@"11";
-    orderDeatail.type=_contentType==ContentTypeLevel1?@"1":@"2";
-    [self.navigationController pushViewController:orderDeatail animated:YES];
+    
+    if (_contentType==1) {
+        FriendOrderDetail * orderDeatail=[FriendOrderDetail new];
+        NSDictionary * dic=_datas[indexPath.row];
+        orderDeatail.dlid=[NSString stringWithFormat:@"%@",dic[@"id"]];
+        //    orderDeatail.dlid=@"11";
+        orderDeatail.type=_contentType==ContentTypeLevel1?@"1":@"2";
+        [self.navigationController pushViewController:orderDeatail animated:YES];
+    }
+    
+
 }
 
 - (void)didReceiveMemoryWarning {
@@ -305,6 +401,36 @@
     // Dispose of any resources that can be recreated.
 }
 
+
+#pragma  mark -- dandu
+
+-(void)showBtnEmpty1:(BOOL)show{
+    if (show) {
+        if (_btnEmpty1) {
+            
+        }else{
+            _btnEmpty1=[[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 100*self.scale, 100*self.scale)];
+            _btnEmpty1.image=[UIImage imageNamed:@"noData"];
+            _btnEmpty1.contentMode=UIViewContentModeScaleAspectFit;
+            _btnEmpty1.center=CGPointMake(Vwidth/2, _tableView.tableHeaderView.height+ 100*self.scale);
+            [self.tableView addSubview:_btnEmpty1];
+            UILabel * lable=[[UILabel alloc]initWithFrame:CGRectMake(0, _btnEmpty1.height+2*self.scale, _btnEmpty1.width, 20*self.scale)];
+            lable.textColor=blackTextColor;
+            lable.font=DefaultFont(self.scale);
+            lable.textAlignment=NSTextAlignmentCenter;
+            lable.text=@"暂无数据";
+            [_btnEmpty1 addSubview:lable];
+        }
+        
+    }else{
+        if (_btnEmpty1) {
+            
+            [_btnEmpty1 removeFromSuperview];
+            _btnEmpty1=nil;
+        }
+        
+    }
+}
 /*
 #pragma mark - Navigation
 

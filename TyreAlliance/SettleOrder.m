@@ -84,8 +84,8 @@
     NSDateFormatter * fo=[[NSDateFormatter alloc]init];
     [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
     [fo setDateFormat:@"yyyy-MM-dd"];
-    _starttime=[fo dateFromString:@"2000-01-01"];
-    _endtime=[NSDate date];
+    _starttime=[NSDate date];
+    _endtime=[[NSDate date] dateByAddingTimeInterval:3600*24];
     
 
 }
@@ -98,7 +98,7 @@
     if (_starttime==nil || _endtime==nil) {
         dic=@{@"uid":[Stockpile sharedStockpile].ID,
               @"states":states,
-              @"ye":[NSString stringWithFormat:@"%d",_yeIndex]
+              @"ye":[NSString stringWithFormat:@"%ld",(long)_yeIndex]
               };
     }else{
         NSDateFormatter * fo=[[NSDateFormatter alloc]init];
@@ -108,7 +108,7 @@
         NSString * endtime=[fo stringFromDate:_endtime];
         dic=@{@"uid":[Stockpile sharedStockpile].ID,
                              @"states":states,
-                             @"ye":[NSString stringWithFormat:@"%d",_yeIndex],
+                             @"ye":[NSString stringWithFormat:@"%ld",(long)_yeIndex],
                              @"startime":starttime,
                              @"endtime":endtime};
     }
@@ -127,37 +127,64 @@
         if ([ret isEqualToString:@"1"]) {
         
             [_datas addObjectsFromArray:model];
-            if ([model count]==0) {
+            if (((NSArray *)model).count==0) {
                 [_tableView.mj_footer endRefreshingWithNoMoreData];
-                [self showPromptBoxWithSting:@"没有更多数据!"];
+//                [self showPromptBoxWithSting:@"没有更多数据!"];
             }else{
                 [_tableView.mj_footer endRefreshing];
-                [self showPromptBoxWithSting:msg];
+//                [self showPromptBoxWithSting:msg];
             }
+//            [self showFailed:NO];
           
         }else{
             [_tableView.mj_footer endRefreshing];
-            [self showPromptBoxWithSting:msg];
+//            [self showPromptBoxWithSting:msg];
+//            if (_datas.count==0) {
+////                [self showFailed:YES];
+//            }
         }
+        [self showBtnEmpty:_datas.count==0?YES:NO];
+
           [self reshView];
     }];
     
 }
 -(void)reshView{
     _screenBtn.hidden=YES;
-    
+//    [self showBtnEmpty:_datas.count==0?YES:NO];
     
     NSDateFormatter * fo=[[NSDateFormatter alloc]init];
     [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
     [fo setDateFormat:@"yyyy-MM-dd"];
     
     NSString * starttime=[fo stringFromDate:_starttime];
-    starttime= [starttime stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
-    [_btnStart setTitle:starttime forState:UIControlStateNormal];
+//    starttime= [starttime stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
+    NSArray * startTimeArr=[starttime componentsSeparatedByString:@"-"];
+    NSMutableString * startTimeS=[NSMutableString string];
+    for (int i=0; i<startTimeArr.count; i++) {
+        if (i!=0) {
+            [startTimeS appendString:[NSString stringWithFormat:@"%@/",startTimeArr[i]]];
+        }
+    }
+    [startTimeS appendString:(NSString *)(startTimeArr.firstObject)];
+    [_btnStart setTitle:startTimeS forState:UIControlStateNormal];
+    
+    
     
     NSString * endtime=[fo stringFromDate:_endtime];
-    endtime=[endtime stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
-    [_btnEnd setTitle:endtime forState:UIControlStateNormal];
+//    endtime=[endtime stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
+    NSArray * endTimeArr=[endtime componentsSeparatedByString:@"-"];
+    NSMutableString * endTimeS=[NSMutableString string];
+    for (int i=0; i<endTimeArr.count; i++) {
+        if (i!=0) {
+            [endTimeS appendString:[NSString stringWithFormat:@"%@/",endTimeArr[i]]];
+            
+        }
+    }
+    [endTimeS appendString:(NSString *)(endTimeArr.firstObject)];
+    [_btnEnd setTitle:endTimeS forState:UIControlStateNormal];
+    
+    
     
     [_tableView reloadData];
 }
@@ -171,10 +198,17 @@
         [control addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
         
         UIDatePicker * datePicker=[[UIDatePicker alloc]initWithFrame:CGRectMake(0, 0, Vwidth, 150*self.scale)];
+        NSDateFormatter * fo=[[NSDateFormatter alloc]init];
+        [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
+        [fo setDateFormat:@"yyyy-MM-dd"];
+        datePicker.minimumDate=[fo dateFromString:@"1990-01-01"];
         datePicker.backgroundColor=[UIColor whiteColor];
         datePicker.bottom=control.height;
         [control addSubview:datePicker];
         datePicker.datePickerMode=UIDatePickerModeDate;
+    
+    
+    
         _datePicker=datePicker;
         _dateControl=control;
         
@@ -218,28 +252,39 @@
         [fo setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:8*3600]];
         [fo setDateFormat:@"yyyy-MM-dd"];
         NSString * time=[fo stringFromDate:_datePicker.date];
-        time = [time stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
-        [_btnStart setTitle:time forState:UIControlStateNormal];
+        NSArray * timeArr=[time componentsSeparatedByString:@"-"];
+        NSMutableString * timeS=[NSMutableString string];
+        for (int i=0; i<timeArr.count; i++) {
+            if (i!=0) {
+                [timeS appendString:[NSString stringWithFormat:@"%@/",timeArr[i]]];
+            }
+        }
+        [timeS appendString:(NSString *)(timeArr.firstObject)];
         
-        if (_btnStart.selected==YES) {
+        
+        if (_btnStart.selected) {
             _starttime=[fo dateFromString:time];
+               [_btnStart setTitle:timeS forState:UIControlStateNormal];
         }
-        if (_btnEnd.selected==YES) {
+        
+        if (_btnEnd.selected) {
             _endtime=[fo dateFromString:time];
+            [_btnEnd setTitle:time forState:UIControlStateNormal];
         }
-        _screenBtn.hidden=NO;
-//        [self reshData];
+//        _screenBtn.hidden=NO;
+        [self reshData];
     }
     [self timeBtn:nil];
  
     
 }
 -(void)newView{
-    UIView * timeView = [[UIView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, 30*self.scale)];
+    UIView * timeView = [[UIView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, 40*self.scale)];
     timeView.backgroundColor=[UIColor whiteColor];
     [self.view addSubview:timeView];
     
-    UILabel * startLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale, 20*self.scale)];
+    UILabel * startLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale,timeView.height- 15*self.scale)];
+    startLabel.centerY=timeView.height/2;
     startLabel.font=DefaultFont(self.scale);
     startLabel.textColor=blackTextColor;
     [timeView addSubview:startLabel];
@@ -247,7 +292,8 @@
     
 
     
-    UIButton * startBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, 20*self.scale)];
+    UIButton * startBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, startLabel.height)];
+    startBtn.centerY=timeView.height/2;
     startBtn.titleLabel.font=Small10Font(self.scale);
     startBtn.layer.cornerRadius=3;
     startBtn.layer.borderColor=blackLineColore.CGColor;
@@ -262,7 +308,8 @@
     [startBtn addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
     _btnStart=startBtn;
     
-    UIButton * endBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, 20*self.scale)];
+    UIButton * endBtn=[[UIButton alloc]initWithFrame:CGRectMake(startLabel.right+10*self.scale, startLabel.top, 70*self.scale, startLabel.height)];
+    endBtn.centerY=timeView.height/2;
     endBtn.right=Vwidth-10*self.scale;
     endBtn.titleLabel.font=Small10Font(self.scale);
     endBtn.layer.cornerRadius=3;
@@ -276,11 +323,11 @@
     [endBtn setBackgroundImage:[UIImage ImageForColor:navigationControllerColor] forState:UIControlStateSelected];
     [endBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
     [endBtn addTarget:self action:@selector(timeBtn:) forControlEvents:UIControlEventTouchUpInside];
-    
     _btnEnd=endBtn;
     
     
-    UILabel * endLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale, 20*self.scale)];
+    UILabel * endLabel=[[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 45*self.scale, startLabel.height)];
+    endLabel.centerY=timeView.height/2;
     endLabel.right=endBtn.left-10*self.scale;
     endLabel.font=DefaultFont(self.scale);
     endLabel.textColor=blackTextColor;
@@ -321,6 +368,7 @@
     
     if (!_dateControl) {
         [self newDateControl];
+        [self.view bringSubviewToFront:_dateControl];
         return;
     }
 
@@ -333,6 +381,7 @@
             _datePicker.date=_endtime;
         }
             _dateControl.hidden=NO;
+        [self.view bringSubviewToFront:_dateControl];
             [UIView animateWithDuration:0.3 animations:^{
                 _dateControl.alpha=1;
             }];
@@ -350,9 +399,9 @@
 }
 
 #pragma mark -- tableView delegate DataSource
-//-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
-//    return 30*self.scale;
-//}
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+    return 30*self.scale;
+}
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
     return 40*self.scale;
 }
@@ -361,7 +410,7 @@
     view.backgroundColor=[UIColor whiteColor];
     
     UILabel * lableTime= [[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 40*self.scale, 20*self.scale)];
-    lableTime.centerX=70*self.scale;
+    lableTime.centerX=Vwidth/6;
     lableTime.font=DefaultFont(self.scale);
     lableTime.textColor=blackTextColor;
     lableTime.textAlignment=NSTextAlignmentCenter;
@@ -370,7 +419,7 @@
     
     
     UILabel * orderNum = [[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 40*self.scale, 20*self.scale)];
-    orderNum.centerX=view.centerX;
+    orderNum.centerX=Vwidth/2;
     orderNum.font=DefaultFont(self.scale);
     orderNum.textColor=blackTextColor;
     orderNum.textAlignment=NSTextAlignmentCenter;
@@ -378,7 +427,7 @@
     [view addSubview:orderNum];
     
     UILabel * money = [[UILabel alloc]initWithFrame:CGRectMake(10*self.scale, 5*self.scale, 40*self.scale, 20*self.scale)];
-    money.centerX=Vwidth-70*self.scale;
+    money.centerX=Vwidth*(5/6.0);
     money.font=DefaultFont(self.scale);
     money.textColor=blackTextColor;
     money.textAlignment=NSTextAlignmentCenter;
@@ -398,11 +447,9 @@
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     SettleOrderCell * cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
     NSDictionary * dic=_datas[indexPath.row];
-    cell.labelMoney.text=[NSString stringWithFormat:@"%@",dic[@"money"]];
+    cell.labelMoney.text=[NSString stringWithFormat:@"￥%@",dic[@"money"]];
     cell.orderNumber.text=[NSString stringWithFormat:@"%@",dic[@"order_id"]];
-//    [cell.orderNumber sizeToFit];
     cell.labelTime.text=[NSString stringWithFormat:@"%@",dic[@"time"]];
-//    [cell.labelTime sizeToFit];
     
     return cell;
 }

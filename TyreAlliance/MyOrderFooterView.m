@@ -53,7 +53,7 @@
     _btnAction.layer.cornerRadius=4;
     _btnAction.layer.masksToBounds=YES;
    
-    _btnAction.titleLabel.font=Small10Font(self.scale);
+    _btnAction.titleLabel.font=DefaultFont(self.scale);
     [_btnAction setBackgroundImage:[UIImage ImageForColor:darkOrangeColor] forState:UIControlStateNormal];
     [_btnAction setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
      [_btnAction setTitle:@"发货" forState:UIControlStateNormal];

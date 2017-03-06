@@ -12,5 +12,6 @@
 #import "UIImageView+AFNetworking.h"
 @interface SuperTableViewCell : UITableViewCell
 @property(nonatomic,assign)float scale;
+
 -(CGSize)Text:(NSString *)text Size:(CGSize)size Font:(UIFont *)fone;
 @end

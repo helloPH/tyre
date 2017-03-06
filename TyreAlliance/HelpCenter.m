@@ -10,7 +10,7 @@
 #import "HelperCenterCell.h"
 
 
-@interface HelpCenter ()<UITableViewDelegate,UITableViewDataSource>
+@interface HelpCenter ()<UITableViewDelegate,UITableViewDataSource,UIWebViewDelegate>
 @property (nonatomic,strong)UITableView * tableView;
 @property (nonatomic,strong)NSMutableArray * datas;
 @end
@@ -25,7 +25,7 @@
     // Do any additional setup after loading the view.
 }
 -(void)newNavi{
-    self.TitleLabel.text=@"设置";
+    self.TitleLabel.text=@"帮助中心";
     UIButton *popBtn=[[UIButton alloc]initWithFrame:CGRectMake(0, self.TitleLabel.top, self.TitleLabel.height, self.TitleLabel.height)];
     [popBtn setImage:[UIImage imageNamed:@"left"] forState:UIControlStateNormal];
     [popBtn setImage:[UIImage imageNamed:@"left_b"] forState:UIControlStateHighlighted];
@@ -42,13 +42,12 @@
     
 }
 -(void)newView{
-    _tableView=[[UITableView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom, Vwidth, Vheight-self.NavImg.height) style:UITableViewStylePlain];
-    _tableView.delegate=self;
-    _tableView.dataSource=self;
-    [self.view addSubview:_tableView];
-    _tableView.estimatedRowHeight=30;
-    _tableView.separatorStyle=UITableViewCellSeparatorStyleNone;
-    [_tableView registerClass:[HelperCenterCell class] forCellReuseIdentifier:@"cell"];
+    UIWebView * webView=[[UIWebView alloc]initWithFrame:CGRectMake(0, self.NavImg.bottom+10*self.scale  , Vwidth, Vheight-self.NavImg.height-10*self.scale)];
+    webView.delegate=self;
+    webView.backgroundColor=superBackgroundColor;
+    [webView loadHTMLString:_textString baseURL:[NSURL URLWithString:_textString]];
+    [self.view addSubview:webView];
+
 }
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
@@ -69,6 +68,21 @@
     
     
     return cell;
+}
+#pragma mark -- webView delegate
+-(BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType{
+    [self startAnimating:nil];
+    return YES;
+}
+-(void)webViewDidStartLoad:(UIWebView *)webView{
+    [self stopAnimating];
+}
+-(void)webViewDidFinishLoad:(UIWebView *)webView{
+    [self stopAnimating];
+}
+-(void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error{
+    [self stopAnimating];
+    [self showBtnEmpty:YES];
 }
 
 /*
